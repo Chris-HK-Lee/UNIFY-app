@@ -191,11 +191,13 @@ function User() {
   return (
     <div className="auth-container">
       <h1>UNI-fy</h1>
+      <div className="auth-card">
       <div className="auth-tabs">
         <button onClick={() => setMode("login")}>Login</button>
         <button onClick={() => setMode("register")}>Register</button>
       </div>
       {mode === "login" ? <Login /> : <Register />}
+      </div>
     </div>
   );
 }
