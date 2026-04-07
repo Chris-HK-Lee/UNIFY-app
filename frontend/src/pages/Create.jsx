@@ -16,6 +16,14 @@ const Create = () => {
     }
   }
 
+  const handleBoard = (e) => {
+    setBoardType(e.target.value);
+  };
+
+  const handleGroup = (e) => {
+    setGroupType(e.target.value);
+  };
+
   const handleSubmit = async (e, type) => {
     e.preventDefault()
     const formData = Object.fromEntries(new FormData(e.target))
@@ -64,7 +72,7 @@ const Create = () => {
       <h1>Create</h1>
 
       <div className="create-buttons">
-        {['post', 'board', 'group'].map(type => (
+        {['Post', 'Board', 'Group'].map(type => (
           <button
             key={type}
             onClick={() => toggle(type)}
@@ -75,8 +83,8 @@ const Create = () => {
         ))}
       </div>
 
-      {active === 'post' && (
-        <form onSubmit={(e) => handleSubmit(e, 'post')} className="create-form">
+      {active === 'Post' && (
+        <form onSubmit={(e) => handleSubmit(e, 'Post')} className="create-form">
           <h2>New Post</h2>
           <div className="field">
             <label>Content</label>
@@ -98,6 +106,71 @@ const Create = () => {
           <div className="form-actions">
             <button type="button" onClick={() => setActive(null)}>Cancel</button>
             <button type="submit">Post</button>
+          </div>
+        </form>
+      )}
+
+      {active === 'Board' && (
+        <form onSubmit={(e) => handleSubmit(e, 'Board')} className="create-form">
+          <h2>New Board</h2>
+          <div className="radio-field">
+            <label> Board Type </label>
+              <label id = "option">
+                <input type="radio" name="choice" value="Question" checked={boardType === 'Question'} onChange={handleBoard} />
+                Question
+              </label>
+              <label id="option">
+                <input type="radio" name="choice" value="Event" checked={boardType === 'Event'} onChange={handleBoard} />
+                Event
+              </label>
+              <label id="option">
+                <input type="radio" name="choice" value="Job" checked={boardType === 'Job'} onChange={handleBoard} />
+                Job
+              </label>
+            </div>
+          <div className="field">
+            <label>Content</label>
+            <textarea name="boardDescription" rows={4} placeholder="Give a description of your board!" required />
+          </div>
+          <div className="field">
+            <label>Visibility</label>
+            <select name="privStatus">
+              <option value="public">Public</option>
+              <option value="private">Private (Friends-Only)</option>
+            </select>
+          </div>
+          <div className="form-actions">
+            <button type="button" onClick={() => setActive(null)}>Cancel</button>
+            <button type="submit">Make Board</button>
+          </div>
+        </form>
+      )}
+
+      {active === 'Group' && (
+        <form onSubmit={(e) => handleSubmit(e, 'Group')} className="create-form">
+          <h2>New Group</h2>
+          <div className="radio-field">
+            <label> Group Type </label>
+              <label id="option">
+                <input type="radio" name="choice" value="Course" checked={groupType === 'Course'} onChange={handleGroup} /> 
+                Course
+              </label>
+              <label id="option">
+                <input type="radio" name="choice" value="Major" checked={groupType === 'Major'} onChange={handleGroup} />
+                Major
+              </label>
+              <label id="option">
+                <input type="radio" name="choice" value="Club" checked={groupType === 'Club'} onChange={handleGroup} />
+                Club
+              </label>
+            </div>
+          <div className="field">
+            <label>Content</label>
+            <textarea name="boardDescription" rows={4} placeholder="Give a description of your group!" required />
+          </div>
+          <div className="form-actions">
+            <button type="button" onClick={() => setActive(null)}>Cancel</button>
+            <button type="submit">Make Group</button>
           </div>
         </form>
       )}
