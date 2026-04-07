@@ -1,5 +1,7 @@
 import express from "express"
 import mysql from "mysql2"
+import cors from "cors"
+
 
 const app = express()
 
@@ -11,12 +13,13 @@ app.listen(8800, () => {
     const db = mysql.createConnection({
         host: "localhost",
         user: "root",
-        password: "Asiancanadian1!",
+        password: "",
         database: "unify"
     })
 
     app.use(express.json())
-    
+    app.use(cors())
+
     app.get("/users", (req, res) => {
         const q = "SELECT * FROM users"
         db.query(q, (err, data) => {
