@@ -20,6 +20,8 @@ const emailPlaceholder = {
 
 function Register() {
     const [accountType, setAccountType] = useState("student");
+    const [serverError, setServerError] = useState("");
+    const [success, setSuccess] = useState("");
     const {
         register,
         handleSubmit,
@@ -28,6 +30,8 @@ function Register() {
     } = useForm();
 
     const onSubmit = async (data) => {
+        setServerError("");
+        setSuccess("");
         try {
             const res = await fetch("http://localhost:8800/register", {
                 method: "POST",
@@ -35,9 +39,13 @@ function Register() {
                 body: JSON.stringify({ ...data, accountType }),
             })
             const result = await res.json()
-            console.log(result)
+            if (!res.ok) {
+                setServerError(result)
+            } else {
+                setSuccess(result)
+            }
         } catch (err) {
-            console.error(err)
+            setServerError("Something went wrong. Please try again.")
         }
     }
 
@@ -99,6 +107,8 @@ function Register() {
                 />
                 {errors.password && <span style={{ color: "red" }}>*Password* is mandatory</span>}
 
+                {serverError && <span style={{ color: "red" }}>{serverError}</span>}
+                {success && <span style={{ color: "green" }}>{success}</span>}
                 <input type="submit" style={{ backgroundColor: "#a1eafb" }} />
             </form>
         </>
@@ -107,6 +117,8 @@ function Register() {
 
 function Login() {
     const [accountType, setAccountType] = useState("student");
+    const [serverError, setServerError] = useState("");
+    const [success, setSuccess] = useState("");
     const {
         register,
         handleSubmit,
@@ -114,17 +126,22 @@ function Login() {
     } = useForm();
 
     const onSubmit = async (data) => {
+        setServerError("");
+        setSuccess("");
         try {
             const res = await fetch("http://localhost:8800/login", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ ...data, accountType }),
             })
-            if (!res.ok) { console.log("Invalid credentials"); return }
-            const user = await res.json()
-            console.log(user.fname + " You Are Successfully Logged In as " + user.accountType)
+            const result = await res.json()
+            if (!res.ok) {
+                setServerError(result)
+            } else {
+                setSuccess(result.fname + " You Are Successfully Logged In as " + result.accountType)
+            }
         } catch (err) {
-            console.error(err)
+            setServerError("Something went wrong. Please try again.")
         }
     }
 
@@ -160,6 +177,8 @@ function Login() {
                 />
                 {errors.password && <span style={{ color: "red" }}>*Password* is mandatory</span>}
 
+                {serverError && <span style={{ color: "red" }}>{serverError}</span>}
+                {success && <span style={{ color: "green" }}>{success}</span>}
                 <input type="submit" style={{ backgroundColor: "#a1eafb" }} />
             </form>
         </>
