@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { useNavigate } from "react-router-dom";
 import "./Login.css";
 
 // login/registration code is adapted from this tutorial:
@@ -118,7 +119,7 @@ function Register() {
 function Login() {
     const [accountType, setAccountType] = useState("student");
     const [serverError, setServerError] = useState("");
-    const [success, setSuccess] = useState("");
+    const navigate = useNavigate();
     const {
         register,
         handleSubmit,
@@ -127,7 +128,6 @@ function Login() {
 
     const onSubmit = async (data) => {
         setServerError("");
-        setSuccess("");
         try {
             const res = await fetch("http://localhost:8800/login", {
                 method: "POST",
@@ -138,7 +138,8 @@ function Login() {
             if (!res.ok) {
                 setServerError(result)
             } else {
-                setSuccess(result.fname + " You Are Successfully Logged In as " + result.accountType)
+                sessionStorage.setItem("user", JSON.stringify(result))
+                navigate("/home")
             }
         } catch (err) {
             setServerError("Something went wrong. Please try again.")
@@ -178,7 +179,6 @@ function Login() {
                 {errors.password && <span style={{ color: "red" }}>*Password* is mandatory</span>}
 
                 {serverError && <span style={{ color: "red" }}>{serverError}</span>}
-                {success && <span style={{ color: "green" }}>{success}</span>}
                 <input type="submit" style={{ backgroundColor: "#a1eafb" }} />
             </form>
         </>
@@ -190,7 +190,7 @@ function User() {
 
   return (
     <div className="auth-container">
-      <h1>UNI-fy</h1>
+      <h1>UNI-FY</h1>
       <div className="auth-card">
       <div className="auth-tabs">
         <button onClick={() => setMode("login")}>Login</button>
