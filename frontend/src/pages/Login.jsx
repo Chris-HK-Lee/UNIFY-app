@@ -33,7 +33,7 @@ function Register() {
         setServerError("");
         setSuccess("");
         try {
-            const res = await fetch("http://localhost:8800/register", {
+            const res = await fetch("http://localhost:9999/register", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ ...data, accountType }),
@@ -129,7 +129,7 @@ function Login() {
         setServerError("");
         setSuccess("");
         try {
-            const res = await fetch("http://localhost:8800/login", {
+            const res = await fetch("http://localhost:9999/login", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ ...data, accountType }),

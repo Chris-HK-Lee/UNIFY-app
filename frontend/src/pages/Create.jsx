@@ -6,7 +6,7 @@ const Create = () => {
   const [active, setActive]       = useState(null)
   const [boardType, setBoardType] = useState(null)
   const [groupType, setGroupType] = useState(null) 
-  const userID = 1
+  const userID = 1 // rn user ID is constant, later need a save state after login so that the user who is logged in is posting
 
   const toggle = (type) => {
     if (active === type) {

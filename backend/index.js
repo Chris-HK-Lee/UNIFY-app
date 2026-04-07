@@ -51,26 +51,33 @@ app.listen(9999, () => {
     })
 
     app.post("/posts", (req, res) => {
+        console.log("Posts hit:", req.body)
         const { postContent, privStatus, userID, boardID } = req.body
 
-        const postQuery = "INSERT INTO POSTS (postContent, privStatus, userID) VALUES (?, ?, ?)"
-        db.query(postQuery, [postContent, privStatus, userID], (err, result) => {
+        db.query("SELECT COALESCE(MAX(postID), 0) + 1 AS nextID FROM POSTS", (err, rows) => {
             if (err) return res.status(500).json(err)
+            const postID = rows[0].nextID
 
-            const newPostID = result.insertId
+            const postQuery = "INSERT INTO POSTS (postID, postContent, privStatus, userID) VALUES (?, ?, ?, ?)"
+            db.query(postQuery, [postID, postContent, privStatus, userID], (err, result) => {
+            if (err) {
+                console.error("Post insert failed:", err.message)
+                return res.status(500).json(err)
+            }
 
-            if (boardID) {
-            const uploadQuery = "INSERT INTO UPLOADED (userID, postID, boardID) VALUES (?, ?, ?)"
-            db.query(uploadQuery, [userID, newPostID, boardID], (err2) => {
+            if (boardID && boardID !== "") {
+                const uploadQuery = "INSERT INTO UPLOADED (userID, postID, boardID) VALUES (?, ?, ?)"
+                db.query(uploadQuery, [userID, postID, boardID], (err2) => {
                 if (err2) return res.status(500).json(err2)
                 return res.json("Post created and uploaded to board")
-            })
+                })
             } else {
-            return res.json("Post created successfully")
+                return res.json("Post created successfully")
             }
+            })
         })
     })
-=======
+
     // checking db for registering new users
         app.post("/register", (req, res) => {
         const { fname, lname, username, email, password, accountType } = req.body
@@ -138,5 +145,4 @@ app.listen(9999, () => {
         return res.json({ ...user, accountType })
     })
 })
->>>>>>> login
 })
