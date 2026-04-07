@@ -92,7 +92,7 @@ CREATE TABLE COMPPAGE (
 );
 
 CREATE TABLE POSTS (
-    postID INT UNIQUE,
+    postID INT UNIQUE NOT NULL,
     userID INT NOT NULL,
     postContent TEXT,
     privStatus VARCHAR(255),
