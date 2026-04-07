@@ -49,4 +49,25 @@ app.listen(8800, () => {
             return res.json("user has been created successfully")
         })
     })
+
+    app.post("/posts", (req, res) => {
+        const { postContent, privStatus, userID, boardID } = req.body
+
+        const postQuery = "INSERT INTO POSTS (postContent, privStatus, userID) VALUES (?, ?, ?)"
+        db.query(postQuery, [postContent, privStatus, userID], (err, result) => {
+            if (err) return res.status(500).json(err)
+
+            const newPostID = result.insertId
+
+            if (boardID) {
+            const uploadQuery = "INSERT INTO UPLOADED (userID, postID, boardID) VALUES (?, ?, ?)"
+            db.query(uploadQuery, [userID, newPostID, boardID], (err2) => {
+                if (err2) return res.status(500).json(err2)
+                return res.json("Post created and uploaded to board")
+            })
+            } else {
+            return res.json("Post created successfully")
+            }
+        })
+    })
 })

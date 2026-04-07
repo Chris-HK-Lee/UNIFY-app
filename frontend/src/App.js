@@ -3,7 +3,7 @@ BrowserRouter,
 Routes,
 Route
 } from"react-router-dom";
-import User from "./pages/Login";
+import Login from "./pages/Login";
 import Homepage from "./pages/Homepage";
 import Create from "./pages/Create";
 import Posts from "./pages/Posts";

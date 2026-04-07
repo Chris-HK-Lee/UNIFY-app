@@ -1,5 +1,6 @@
 import React from 'react'
 import { useState } from 'react'
+import './Create.css'
 
 const Create = () => {
   const [active, setActive]       = useState(null)
@@ -73,7 +74,7 @@ const Create = () => {
             <label>Visibility</label>
             <select name="privStatus">
               <option value="public">Public</option>
-              <option value="private">Private--Friends-Only</option>
+              <option value="private">Private (Friends-Only)</option>
             </select>
           </div>
           <div className="field">
