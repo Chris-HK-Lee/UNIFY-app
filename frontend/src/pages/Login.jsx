@@ -1,0 +1,184 @@
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import "./Login.css";
+
+// login/registration code is adapted from this tutorial:
+//https://www.geeksforgeeks.org/reactjs/react-hook-form-create-basic-reactjs-registration-and-login-form/
+
+
+const ACCOUNT_TYPES = [
+  { label: "Student",     value: "student" },
+  { label: "Faculty",     value: "faculty" },
+  { label: "Company Rep", value: "company" },
+];
+
+const emailPlaceholder = {
+  student: "Personal Email",
+  faculty: "University Email",
+  company: "Business Email",
+};
+
+function Register() {
+    const [accountType, setAccountType] = useState("student");
+    const {
+        register,
+        handleSubmit,
+        reset,
+        formState: { errors },
+    } = useForm();
+
+    const onSubmit = async (data) => {
+        try {
+            const res = await fetch("http://localhost:8800/register", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ ...data, accountType }),
+            })
+            const result = await res.json()
+            console.log(result)
+        } catch (err) {
+            console.error(err)
+        }
+    }
+
+    const handleTypeChange = (type) => {
+        setAccountType(type);
+        reset();
+    };
+
+    return (
+        <>
+            <h2>Registration Form</h2>
+
+            <div className="type-selector">
+                {ACCOUNT_TYPES.map(({ label, value }) => (
+                    <button
+                        key={value}
+                        type="button"
+                        className={accountType === value ? "active" : ""}
+                        onClick={() => handleTypeChange(value)}
+                    >
+                        {label}
+                    </button>
+                ))}
+            </div>
+
+            <form className="App" onSubmit={handleSubmit(onSubmit)}>
+                <input
+                    type="text"
+                    {...register("fname", { required: true })}
+                    placeholder="First Name"
+                />
+                {errors.fname && <span style={{ color: "red" }}>*First Name* is mandatory</span>}
+
+                <input
+                    type="text"
+                    {...register("lname", { required: true })}
+                    placeholder="Last Name"
+                />
+                {errors.lname && <span style={{ color: "red" }}>*Last Name* is mandatory</span>}
+
+                <input
+                    type="text"
+                    {...register("username", { required: true })}
+                    placeholder="Username"
+                />
+                {errors.username && <span style={{ color: "red" }}>*Username* is mandatory</span>}
+
+                <input
+                    type="email"
+                    {...register("email", { required: true })}
+                    placeholder={emailPlaceholder[accountType]}
+                />
+                {errors.email && <span style={{ color: "red" }}>*Email* is mandatory</span>}
+
+                <input
+                    type="password"
+                    {...register("password", { required: true })}
+                    placeholder="Password"
+                />
+                {errors.password && <span style={{ color: "red" }}>*Password* is mandatory</span>}
+
+                <input type="submit" style={{ backgroundColor: "#a1eafb" }} />
+            </form>
+        </>
+    );
+}
+
+function Login() {
+    const [accountType, setAccountType] = useState("student");
+    const {
+        register,
+        handleSubmit,
+        formState: { errors },
+    } = useForm();
+
+    const onSubmit = async (data) => {
+        try {
+            const res = await fetch("http://localhost:8800/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ ...data, accountType }),
+            })
+            if (!res.ok) { console.log("Invalid credentials"); return }
+            const user = await res.json()
+            console.log(user.fname + " You Are Successfully Logged In as " + user.accountType)
+        } catch (err) {
+            console.error(err)
+        }
+    }
+
+    return (
+        <>
+            <h2>Login Form</h2>
+
+            <div className="type-selector">
+                {ACCOUNT_TYPES.map(({ label, value }) => (
+                    <button
+                        key={value}
+                        type="button"
+                        className={accountType === value ? "active" : ""}
+                        onClick={() => setAccountType(value)}
+                    >
+                        {label}
+                    </button>
+                ))}
+            </div>
+
+            <form className="App" onSubmit={handleSubmit(onSubmit)}>
+                <input
+                    type="email"
+                    {...register("email", { required: true })}
+                    placeholder={emailPlaceholder[accountType]}
+                />
+                {errors.email && <span style={{ color: "red" }}>*Email* is mandatory</span>}
+
+                <input
+                    type="password"
+                    {...register("password", { required: true })}
+                    placeholder="Password"
+                />
+                {errors.password && <span style={{ color: "red" }}>*Password* is mandatory</span>}
+
+                <input type="submit" style={{ backgroundColor: "#a1eafb" }} />
+            </form>
+        </>
+    );
+}
+
+function User() {
+  const [mode, setMode] = useState("login");
+
+  return (
+    <div className="auth-container">
+      <h1>UNI-fy</h1>
+      <div className="auth-tabs">
+        <button onClick={() => setMode("login")}>Login</button>
+        <button onClick={() => setMode("register")}>Register</button>
+      </div>
+      {mode === "login" ? <Login /> : <Register />}
+    </div>
+  );
+}
+
+export default User;
