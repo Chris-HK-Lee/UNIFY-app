@@ -3,7 +3,7 @@ BrowserRouter,
 Routes,
 Route
 } from"react-router-dom";
-import User from "./pages/User";
+import User from "./pages/Login";
 import Homepage from "./pages/Homepage";
 import Create from "./pages/Create";
 import Posts from "./pages/Posts";
@@ -17,7 +17,7 @@ function App() {
     <div className="App">
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<User/>}/>
+            <Route path="/" element={<Login/>}/>
             <Route path="/homepage" element={<Homepage/>}/>   
             <Route path="/create" element={<Create/>}/>
             <Route path="/posts" element={<Posts/>}/>
