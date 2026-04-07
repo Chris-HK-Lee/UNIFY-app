@@ -22,15 +22,15 @@ const Create = () => {
     const body = { ...formData, userID }
 
     const endpoints = {
-      post:     'http://localhost:8800/posts',
-      generalG: 'http://localhost:8800/social_group',
-      course:   'http://localhost:8800/social_group/course',
-      major:    'http://localhost:8800/social_group/major',
-      club:     'http://localhost:8800/social_group/club',
-      generalB: 'http://localhost:8800/boards',
-      event:    'http://localhost:8800/boards/event',
-      question: 'http://localhost:8800/boards/question',
-      job:      'http://localhost:8800/boards/job',
+      post:     'http://localhost:9999/posts',
+      generalG: 'http://localhost:9999/social_group',
+      course:   'http://localhost:9999/social_group/course',
+      major:    'http://localhost:9999/social_group/major',
+      club:     'http://localhost:9999/social_group/club',
+      generalB: 'http://localhost:9999/boards',
+      event:    'http://localhost:9999/boards/event',
+      question: 'http://localhost:9999/boards/question',
+      job:      'http://localhost:9999/boards/job',
     }
 
     try {
@@ -39,11 +39,23 @@ const Create = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
       })
+
+      if (!res.ok) {
+        const err = await res.json()
+        console.error('Server error:', err)
+        alert(`Failed to create ${type}: ${JSON.stringify(err)}`)
+        return
+      }
+
       const data = await res.json()
-      console.log(data)
-      setActive(null)
+      console.log('Success:', data)
+      setActive(null)       // closes the form on success
+      setBoardType(null)
+      setGroupType(null)
+
     } catch (err) {
-      console.error(err)
+        console.error('Network error:', err)
+        alert(`Network error: ${err.message}`)
     }
   }
 
