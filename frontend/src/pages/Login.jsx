@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import './User.css';
+import './Login.css';
 
 const ACCOUNT_TYPES = [
   { label: 'Student',     value: 'student' },
