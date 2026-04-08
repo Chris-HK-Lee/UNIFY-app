@@ -1,11 +1,14 @@
 import React from 'react'
 
 const Homepage = () => {
+    const user = JSON.parse(sessionStorage.getItem("user"));
+
     return (
-        <div>
-            <h1>Homepage</h1>
+        <div style={{ padding: "40px" }}>
+            <h1>Welcome, {user?.fname}!</h1>
+            <p>Account type: {user?.accountType}</p>
         </div>
-    )
+    );
 }
 
 export default Homepage

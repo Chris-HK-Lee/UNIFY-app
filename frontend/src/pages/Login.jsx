@@ -139,7 +139,7 @@ function Login() {
                 setServerError(result)
             } else {
                 sessionStorage.setItem("user", JSON.stringify(result))
-                navigate("/home")
+                navigate("/homepage")
             }
         } catch (err) {
             setServerError("Something went wrong. Please try again.")
