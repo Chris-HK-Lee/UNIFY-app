@@ -4,8 +4,6 @@ Routes,
 Route
 } from"react-router-dom";
 import Login from "./pages/Login";
-import Add from "./pages/Add";
-import Update from "./pages/Update";
 import Home from "./pages/Home";
 import Homepage from "./pages/Homepage";
 import Create from "./pages/Create";
@@ -21,8 +19,6 @@ function App() {
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Login/>}/>
-            <Route path="/add" element={<Add/>}/>
-            <Route path="/update" element={<Update/>}/>
             <Route path="/home" element={<Home/>}/>
             <Route path="/homepage" element={<Homepage/>}/>   
             <Route path="/create" element={<Create/>}/>
