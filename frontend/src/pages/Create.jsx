@@ -30,15 +30,9 @@ const Create = () => {
     const body = { ...formData, userID }
 
     const endpoints = {
-      post:     'http://localhost:9999/posts',
-      group:    'http://localhost:9999/social_group',
-      course:   'http://localhost:9999/social_group/course',
-      major:    'http://localhost:9999/social_group/major',
-      club:     'http://localhost:9999/social_group/club',
-      board:    'http://localhost:9999/boards',
-      event:    'http://localhost:9999/boards/event',
-      question: 'http://localhost:9999/boards/question',
-      job:      'http://localhost:9999/boards/job',
+      post:     'http://localhost:8800/posts',
+      group:    'http://localhost:8800/social_group',
+      board:    'http://localhost:8800/boards',
     }
 
     try {
