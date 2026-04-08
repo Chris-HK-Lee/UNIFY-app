@@ -46,16 +46,17 @@ CREATE TABLE FACULTY (
 
 CREATE TABLE SOCIAL_GROUP (
     groupID         INT NOT NULL,
-    name            VARCHAR(255),
+    groupName       VARCHAR(255),
+    groupDesc       VARCHAR(255),
     userID          INT,
-    numberOfMembers INT,
+    numberOfMembers INT DEFAULT 0,
     CONSTRAINT pk_social_group      PRIMARY KEY (groupID),
     CONSTRAINT fk_social_group_userID FOREIGN KEY (userID) REFERENCES USERS(userID)
 );
 
 CREATE TABLE COURSE (
     groupID    INT NOT NULL,
-    courseCode INT,
+    courseCode VARCHAR(255),
     userID     INT NOT NULL,
     CONSTRAINT fk_course_groupID FOREIGN KEY (groupID) REFERENCES SOCIAL_GROUP(groupID),
     CONSTRAINT fk_course_userID  FOREIGN KEY (userID)  REFERENCES USERS(userID)

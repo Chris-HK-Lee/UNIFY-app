@@ -136,7 +136,7 @@ const Create = () => {
           )}  
           <div className="field">
             <label>Content</label>
-            <textarea name="boardDescription" rows={4} placeholder="Give a description of your board!" required />
+            <textarea name="boardDesc" rows={4} placeholder="Give a description of your board!" required />
           </div>
           <div className="field">
             <label>Visibility</label>
@@ -150,7 +150,7 @@ const Create = () => {
               <label>Event Time & Date</label>
               <input name= "eventTime" type="datetime-local" onChange={(e) => console.log(e.target.value)} required/>
               <label>Event Location</label>
-              <input name="eventLocation" type="text" placeholder="e.g. HNSC 128 at UofC" required />
+              <input name="eventLoc" type="text" placeholder="e.g. HNSC 128 at UofC" required />
             </div>
           )}
           {boardType === 'job' && (
@@ -194,7 +194,7 @@ const Create = () => {
           </div>
           <div className="field">
             <label>Content</label>
-            <textarea name="groupDescription" rows={4} placeholder="Give a description of your group!" required />
+            <textarea name="groupDesc" rows={4} placeholder="Give a description of your group!" required />
           </div>
           {groupType === 'course' && (
             <div className="field">
