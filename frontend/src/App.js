@@ -4,7 +4,6 @@ Routes,
 Route
 } from"react-router-dom";
 import Login from "./pages/Login";
-import Home from "./pages/Home";
 import Homepage from "./pages/Homepage";
 import Create from "./pages/Create";
 import Posts from "./pages/Posts";
@@ -19,7 +18,6 @@ function App() {
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Login/>}/>
-            <Route path="/home" element={<Home/>}/>
             <Route path="/homepage" element={<Homepage/>}/>   
             <Route path="/create" element={<Create/>}/>
             <Route path="/posts" element={<Posts/>}/>
