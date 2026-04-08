@@ -79,7 +79,7 @@ app.listen(9999, () => {
     })
 
     // checking db for registering new users
-        app.post("/register", (req, res) => {
+    app.post("/register", (req, res) => {
         const { fname, lname, username, email, password, accountType } = req.body
 
         // Check for duplicate email across all subtype tables

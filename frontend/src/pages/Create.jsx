@@ -4,8 +4,8 @@ import './Create.css'
 
 const Create = () => {
   const [active, setActive]       = useState(null)
-  const [boardType, setBoardType] = useState(null)
-  const [groupType, setGroupType] = useState(null) 
+  const [boardType, setboardType] = useState(null)
+  const [groupType, setgroupType] = useState(null) 
   const userID = 1 // rn user ID is constant, later need a save state after login so that the user who is logged in is posting
 
   const toggle = (type) => {
@@ -16,12 +16,12 @@ const Create = () => {
     }
   }
 
-  const handleBoard = (e) => {
-    setBoardType(e.target.value);
+  const handleboard = (e) => {
+    setboardType(e.target.value);
   };
 
-  const handleGroup = (e) => {
-    setGroupType(e.target.value);
+  const handlegroup = (e) => {
+    setgroupType(e.target.value);
   };
 
   const handleSubmit = async (e, type) => {
@@ -31,11 +31,11 @@ const Create = () => {
 
     const endpoints = {
       post:     'http://localhost:9999/posts',
-      generalG: 'http://localhost:9999/social_group',
+      group:    'http://localhost:9999/social_group',
       course:   'http://localhost:9999/social_group/course',
       major:    'http://localhost:9999/social_group/major',
       club:     'http://localhost:9999/social_group/club',
-      generalB: 'http://localhost:9999/boards',
+      board:    'http://localhost:9999/boards',
       event:    'http://localhost:9999/boards/event',
       question: 'http://localhost:9999/boards/question',
       job:      'http://localhost:9999/boards/job',
@@ -43,7 +43,7 @@ const Create = () => {
 
     try {
       const res = await fetch(endpoints[type], {
-        method: 'POST',
+        method: 'post',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
       })
@@ -58,8 +58,8 @@ const Create = () => {
       const data = await res.json()
       console.log('Success:', data)
       setActive(null)       // closes the form on success
-      setBoardType(null)
-      setGroupType(null)
+      setboardType(null)
+      setgroupType(null)
 
     } catch (err) {
         console.error('Network error:', err)
@@ -72,7 +72,7 @@ const Create = () => {
       <h1>Create</h1>
 
       <div className="create-buttons">
-        {['Post', 'Board', 'Group'].map(type => (
+        {['post', 'board', 'group'].map(type => (
           <button
             key={type}
             onClick={() => toggle(type)}
@@ -83,9 +83,9 @@ const Create = () => {
         ))}
       </div>
 
-      {active === 'Post' && (
-        <form onSubmit={(e) => handleSubmit(e, 'Post')} className="create-form">
-          <h2>New Post</h2>
+      {active === 'post' && (
+        <form onSubmit={(e) => handleSubmit(e, 'post')} className="create-form">
+          <h2>New post</h2>
           <div className="field">
             <label>Content</label>
             <textarea name="postContent" rows={4} placeholder="What's on your mind?" required />
@@ -105,26 +105,26 @@ const Create = () => {
           </div>
           <div className="form-actions">
             <button type="button" onClick={() => setActive(null)}>Cancel</button>
-            <button type="submit">Post</button>
+            <button type="submit">post</button>
           </div>
         </form>
       )}
 
-      {active === 'Board' && (
-        <form onSubmit={(e) => handleSubmit(e, 'Board')} className="create-form">
-          <h2>New Board</h2>
+      {active === 'board' && (
+        <form onSubmit={(e) => handleSubmit(e, 'board')} className="create-form">
+          <h2>New board</h2>
           <div className="radio-field">
-            <label> Board Type </label>
+            <label> board Type </label>
               <label id = "option">
-                <input type="radio" name="choice" value="Question" checked={boardType === 'Question'} onChange={handleBoard} />
+                <input type="radio" name="choice" value="Question" checked={boardType === 'Question'} onChange={handleboard} />
                 Question
               </label>
               <label id="option">
-                <input type="radio" name="choice" value="Event" checked={boardType === 'Event'} onChange={handleBoard} />
+                <input type="radio" name="choice" value="Event" checked={boardType === 'Event'} onChange={handleboard} />
                 Event
               </label>
               <label id="option">
-                <input type="radio" name="choice" value="Job" checked={boardType === 'Job'} onChange={handleBoard} />
+                <input type="radio" name="choice" value="Job" checked={boardType === 'Job'} onChange={handleboard} />
                 Job
               </label>
             </div>
@@ -141,36 +141,40 @@ const Create = () => {
           </div>
           <div className="form-actions">
             <button type="button" onClick={() => setActive(null)}>Cancel</button>
-            <button type="submit">Make Board</button>
+            <button type="submit">Make board</button>
           </div>
         </form>
       )}
 
-      {active === 'Group' && (
-        <form onSubmit={(e) => handleSubmit(e, 'Group')} className="create-form">
-          <h2>New Group</h2>
+      {active === 'group' && (
+        <form onSubmit={(e) => handleSubmit(e, 'group')} className="create-form">
+          <h2>New group</h2>
           <div className="radio-field">
-            <label> Group Type </label>
+            <label> group Type </label>
               <label id="option">
-                <input type="radio" name="choice" value="Course" checked={groupType === 'Course'} onChange={handleGroup} /> 
+                <input type="radio" name="choice" value="Course" checked={groupType === 'Course'} onChange={handlegroup} /> 
                 Course
               </label>
               <label id="option">
-                <input type="radio" name="choice" value="Major" checked={groupType === 'Major'} onChange={handleGroup} />
+                <input type="radio" name="choice" value="Major" checked={groupType === 'Major'} onChange={handlegroup} />
                 Major
               </label>
               <label id="option">
-                <input type="radio" name="choice" value="Club" checked={groupType === 'Club'} onChange={handleGroup} />
+                <input type="radio" name="choice" value="Club" checked={groupType === 'Club'} onChange={handlegroup} />
                 Club
               </label>
             </div>
           <div className="field">
+            <label>Name</label>
+            <textarea name="groupName" rows={1} placeholder="Provide a name for your group!" required />
+          </div>
+          <div className="field">
             <label>Content</label>
-            <textarea name="boardDescription" rows={4} placeholder="Give a description of your group!" required />
+            <textarea name="groupDescription" rows={4} placeholder="Give a description of your group!" required />
           </div>
           <div className="form-actions">
             <button type="button" onClick={() => setActive(null)}>Cancel</button>
-            <button type="submit">Make Group</button>
+            <button type="submit">Make group</button>
           </div>
         </form>
       )}
