@@ -116,18 +116,24 @@ const Create = () => {
           <div className="radio-field">
             <label> board Type </label>
               <label id = "option">
-                <input type="radio" name="choice" value="Question" checked={boardType === 'Question'} onChange={handleboard} />
+                <input type="radio" name="choice" value="question" checked={boardType === 'question'} onChange={handleboard} />
                 Question
               </label>
               <label id="option">
-                <input type="radio" name="choice" value="Event" checked={boardType === 'Event'} onChange={handleboard} />
+                <input type="radio" name="choice" value="event" checked={boardType === 'event'} onChange={handleboard} />
                 Event
               </label>
               <label id="option">
-                <input type="radio" name="choice" value="Job" checked={boardType === 'Job'} onChange={handleboard} />
+                <input type="radio" name="choice" value="job" checked={boardType === 'job'} onChange={handleboard} />
                 Job
               </label>
             </div>
+          {boardType === 'question' && (
+            <div className="field">
+              <label>Category or Topic</label>
+              <input name="category" type="text" placeholder="e.g. Study spots on campus?" required />
+            </div>
+          )}  
           <div className="field">
             <label>Content</label>
             <textarea name="boardDescription" rows={4} placeholder="Give a description of your board!" required />
@@ -139,6 +145,24 @@ const Create = () => {
               <option value="private">Private (Friends-Only)</option>
             </select>
           </div>
+          {boardType === 'event' && (
+            <div className="field">
+              <label>Event Time & Date</label>
+              <input name= "eventTime" type="datetime-local" onChange={(e) => console.log(e.target.value)} required/>
+              <label>Event Location</label>
+              <input name="eventLocation" type="text" placeholder="e.g. HNSC 128 at UofC" required />
+            </div>
+          )}
+          {boardType === 'job' && (
+            <div className="field">
+              <label>Field or Industry</label>
+              <input name="jobfield" type="text" placeholder="e.g. IT Cloud Support, Business Analytics etc." required />
+              <label>Employer name and Company</label>
+              <input name="employerName" type="text" placeholder="e.g. Susan Lory @ Nutrien" required />
+              <label>Application Deadline</label>
+              <input name="appDeadline" type="datetime-local" onChange={(e) => console.log(e.target.value)} required />
+            </div>
+          )} 
           <div className="form-actions">
             <button type="button" onClick={() => setActive(null)}>Cancel</button>
             <button type="submit">Make board</button>
@@ -152,15 +176,15 @@ const Create = () => {
           <div className="radio-field">
             <label> group Type </label>
               <label id="option">
-                <input type="radio" name="choice" value="Course" checked={groupType === 'Course'} onChange={handlegroup} /> 
+                <input type="radio" name="choice" value="course" checked={groupType === 'course'} onChange={handlegroup} /> 
                 Course
               </label>
               <label id="option">
-                <input type="radio" name="choice" value="Major" checked={groupType === 'Major'} onChange={handlegroup} />
+                <input type="radio" name="choice" value="major" checked={groupType === 'major'} onChange={handlegroup} />
                 Major
               </label>
               <label id="option">
-                <input type="radio" name="choice" value="Club" checked={groupType === 'Club'} onChange={handlegroup} />
+                <input type="radio" name="choice" value="club" checked={groupType === 'club'} onChange={handlegroup} />
                 Club
               </label>
             </div>
@@ -172,6 +196,24 @@ const Create = () => {
             <label>Content</label>
             <textarea name="groupDescription" rows={4} placeholder="Give a description of your group!" required />
           </div>
+          {groupType === 'course' && (
+            <div className="field">
+              <label>Course Code</label>
+              <input name="courseCode" type="text" placeholder="e.g. CPSC471" required />
+            </div>
+          )}
+          {groupType === 'major' && (
+            <div className="field">
+              <label>Major or Department</label>
+              <input name="department" type="text" placeholder="e.g. Computer Science" required />
+            </div>
+          )}
+          {groupType === 'club' && (
+            <div className="field">
+              <label>Club Rep User ID</label>
+              <input name="clubRepID" type="number" placeholder="Enter club rep user ID (if same as group creator, retype)!" required />
+            </div>
+          )}
           <div className="form-actions">
             <button type="button" onClick={() => setActive(null)}>Cancel</button>
             <button type="submit">Make group</button>

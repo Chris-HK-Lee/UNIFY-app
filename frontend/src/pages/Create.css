@@ -26,6 +26,7 @@
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
+  text-transform: capitalize;
 }
 
 .create-buttons button:hover {
