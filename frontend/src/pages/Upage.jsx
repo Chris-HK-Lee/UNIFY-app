@@ -1,11 +1,11 @@
 import React from 'react'
 
-const Add = () => {
+const Upage = () => {
     return (
         <div>
-            <h1>Add</h1>
+            <h1>Upage</h1>
         </div>
     )
 }
 
-export default Add
+export default Upage

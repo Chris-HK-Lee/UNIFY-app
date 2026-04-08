@@ -6,7 +6,7 @@ CREATE TABLE USERS (
     fname    VARCHAR(255),
     lname    VARCHAR(255),
     username VARCHAR(255),
-    password VARCHAR(255),
+    passwords VARCHAR(255),
     ADMINSID  INT,
     groupID  INT,
     CONSTRAINT pk_userID PRIMARY KEY (userID)

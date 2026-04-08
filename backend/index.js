@@ -13,12 +13,13 @@ app.listen(8800, () => {
     const db = mysql.createConnection({
         host: "localhost",
         user: "root",
-        password: "Asiancanadian1!",
+        password: "",
         database: "unify"
     })
 
     app.use(express.json())
-    
+    app.use(cors())
+
     app.get("/users", (req, res) => {
         const q = "SELECT * FROM users"
         db.query(q, (err, data) => {
@@ -116,4 +117,24 @@ app.listen(8800, () => {
         return res.json({ ...user, accountType })
     })
 })
+    app.post("/posts", (req, res) => {
+        const { postContent, privStatus, userID, boardID } = req.body
+
+        const postQuery = "INSERT INTO POSTS (postContent, privStatus, userID) VALUES (?, ?, ?)"
+        db.query(postQuery, [postContent, privStatus, userID], (err, result) => {
+            if (err) return res.status(500).json(err)
+
+            const newPostID = result.insertId
+
+            if (boardID) {
+            const uploadQuery = "INSERT INTO UPLOADED (userID, postID, boardID) VALUES (?, ?, ?)"
+            db.query(uploadQuery, [userID, newPostID, boardID], (err2) => {
+                if (err2) return res.status(500).json(err2)
+                return res.json("Post created and uploaded to board")
+            })
+            } else {
+            return res.json("Post created successfully")
+            }
+        })
+    })
 })

@@ -7,6 +7,13 @@ import Login from "./pages/Login";
 import Add from "./pages/Add";
 import Update from "./pages/Update";
 import Home from "./pages/Home";
+import Homepage from "./pages/Homepage";
+import Create from "./pages/Create";
+import Posts from "./pages/Posts";
+import Boards from "./pages/Boards";
+import Groups from "./pages/Groups";
+import Cpage from "./pages/Cpage";
+import Upage from "./pages/Upage";
 
 function App() {
   return (
@@ -17,6 +24,13 @@ function App() {
             <Route path="/add" element={<Add/>}/>
             <Route path="/update" element={<Update/>}/>
             <Route path="/home" element={<Home/>}/>
+            <Route path="/homepage" element={<Homepage/>}/>   
+            <Route path="/create" element={<Create/>}/>
+            <Route path="/posts" element={<Posts/>}/>
+            <Route path="/boards" element={<Boards/>}/>
+            <Route path="/groups" element={<Groups/>}/>
+            <Route path="/cpage" element={<Cpage/>}/>
+            <Route path="/upage" element={<Upage/>}/>
           </Routes>
         </BrowserRouter>
     </div>
