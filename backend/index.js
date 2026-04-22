@@ -237,4 +237,23 @@ app.listen(8800, () => {
         return res.json({ ...user, accountType })
     })
 })
+
+    app.post("/admin-login", (req, res) => {
+        const { email, password } = req.body
+        const q = `
+            SELECT u.userID, u.fname, u.lname, u.username, u.password, a.ADMINSID
+            FROM USERS u
+            INNER JOIN ADMINS a ON u.userID = a.userID
+            LEFT JOIN STUDENT s ON u.userID = s.userID
+            LEFT JOIN FACULTY f ON u.userID = f.userID
+            LEFT JOIN COMPANY_REP c ON u.userID = c.userID
+            WHERE s.personalEmail = ? OR f.universityEmail = ? OR c.businessEmail = ?
+        `
+        db.query(q, [email, email, email], (err, data) => {
+            if (err) return res.status(500).json(err)
+            if (data.length === 0) return res.status(401).json("Invalid credentials")
+            if (data[0].password !== password) return res.status(401).json("Invalid credentials")
+            return res.json({ ...data[0], accountType: "admin" })
+        })
+    })
 })

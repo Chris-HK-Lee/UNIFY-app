@@ -139,7 +139,7 @@ function Login() {
                 setServerError(result)
             } else {
                 sessionStorage.setItem("user", JSON.stringify(result))
-                navigate("/homepage")
+                navigate("/homepage", { state: { userID: result.userID } }) // seding userId to homepage
             }
         } catch (err) {
             setServerError("Something went wrong. Please try again.")
@@ -185,6 +185,60 @@ function Login() {
     );
 }
 
+function AdminLogin() {
+    const [serverError, setServerError] = useState("");
+    const navigate = useNavigate();
+    const {
+        register,
+        handleSubmit,
+        formState: { errors },
+    } = useForm();
+
+    const onSubmit = async (data) => {
+        setServerError("");
+        try {
+            const res = await fetch("http://localhost:8800/admin-login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data),
+            })
+            const result = await res.json()
+            if (!res.ok) {
+                setServerError(result)
+            } else {
+                sessionStorage.setItem("user", JSON.stringify(result))
+                navigate("/homepage", { state: { userID: result.userID } })
+            }
+        } catch (err) {
+            setServerError("Something went wrong. Please try again.")
+        }
+    }
+
+    return (
+        <>
+            <h2>Admin Login</h2>
+            <form className="App" onSubmit={handleSubmit(onSubmit)}>
+                <input
+                    type="email"
+                    {...register("email", { required: true })}
+                    placeholder="Email"
+                />
+                {errors.email && <span style={{ color: "red" }}>*Email* is mandatory</span>}
+
+                <input
+                    type="password"
+                    {...register("password", { required: true })}
+                    placeholder="Password"
+                />
+                {errors.password && <span style={{ color: "red" }}>*Password* is mandatory</span>}
+
+                {serverError && <span style={{ color: "red" }}>{serverError}</span>}
+                <input type="submit" style={{ backgroundColor: "#a1eafb" }} />
+            </form>
+        </>
+    );
+}
+
 function User() {
   const [mode, setMode] = useState("login");
 
@@ -195,8 +249,11 @@ function User() {
       <div className="auth-tabs">
         <button onClick={() => setMode("login")}>Login</button>
         <button onClick={() => setMode("register")}>Register</button>
+        <button onClick={() => setMode("admin")}>Admin</button>
       </div>
-      {mode === "login" ? <Login /> : <Register />}
+      {mode === "login" && <Login />}
+      {mode === "register" && <Register />}
+      {mode === "admin" && <AdminLogin />}
       </div>
     </div>
   );
