@@ -1,12 +1,15 @@
 import React from 'react'
 import { useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import './Create.css'
 
 const Create = () => {
+  const user = JSON.parse(sessionStorage.getItem("user"));
+  const { state } = useLocation();
+  const userID = state?.userID ?? user?.userID;
   const [active, setActive]       = useState(null)
   const [boardType, setboardType] = useState(null)
   const [groupType, setgroupType] = useState(null) 
-  const userID = 1 // rn user ID is constant, later need a save state after login so that the user who is logged in is posting
 
   const toggle = (type) => {
     if (active === type) {

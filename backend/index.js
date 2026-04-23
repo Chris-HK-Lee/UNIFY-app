@@ -12,7 +12,7 @@ app.listen(8800, () => {
     const db = mysql.createConnection({
         host: "localhost",
         user: "root",
-        password: "Asiancanadian1!",
+        password: "",
         database: "unify"
     })
 
@@ -167,6 +167,30 @@ app.listen(8800, () => {
                 }
                 return res.json("Board created successfully")
             })
+        })
+    })
+
+    app.get("/posts/user/:userID", (req, res) => {
+        const postQuery = "SELECT * FROM POSTS WHERE userID = ?"
+        db.query(postQuery, [req.params.userID], (err, data) => {
+            if (err) return res.status(500).json(err)
+            return res.json(data)
+        })
+    })
+
+    app.get("/boards/user/:userID", (req, res) => {
+        const postQuery = "SELECT * FROM BOARDS WHERE userID = ?"
+        db.query(postQuery, [req.params.userID], (err, data) => {
+            if (err) return res.status(500).json(err)
+            return res.json(data)
+        })
+    })
+
+    app.get("/groups/user/:userID", (req, res) => {
+        const postQuery = "SELECT * FROM SOCIAL_GROUP WHERE userID = ?"
+        db.query(postQuery, [req.params.userID], (err, data) => {
+            if (err) return res.status(500).json(err)
+            return res.json(data)
         })
     })
 
