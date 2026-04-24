@@ -8,7 +8,6 @@ CREATE TABLE USERS (
     username VARCHAR(255),
     passwords VARCHAR(255),
     ADMINSID  INT,
-    groupID  INT,
     CONSTRAINT pk_userID PRIMARY KEY (userID)
 );
 
@@ -49,7 +48,6 @@ CREATE TABLE SOCIAL_GROUP (
     groupName       VARCHAR(255),
     groupDesc       VARCHAR(255),
     userID          INT,
-    numberOfMembers INT DEFAULT 1,
     CONSTRAINT pk_social_group      PRIMARY KEY (groupID),
     CONSTRAINT fk_social_group_userID FOREIGN KEY (userID) REFERENCES USERS(userID)
 );
@@ -76,6 +74,14 @@ CREATE TABLE CLUB (
     userID    INT NOT NULL,
     CONSTRAINT fk_club_groupID FOREIGN KEY (groupID) REFERENCES SOCIAL_GROUP(groupID),
     CONSTRAINT fk_club_userID  FOREIGN KEY (userID)  REFERENCES USERS(userID)
+);
+
+CREATE TABLE GROUP_MEMBERS (
+  groupID INT NOT NULL,
+  userID  INT NOT NULL,
+  CONSTRAINT pk_group_members PRIMARY KEY (groupID, userID),
+  CONSTRAINT fk_gm_groupID FOREIGN KEY (groupID) REFERENCES SOCIAL_GROUP(groupID),
+  CONSTRAINT fk_gm_userID  FOREIGN KEY (userID)  REFERENCES USERS(userID)
 );
 
 CREATE TABLE UNIPAGE(

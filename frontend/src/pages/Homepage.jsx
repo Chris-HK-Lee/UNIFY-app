@@ -29,6 +29,20 @@ const Homepage = () => {
 
         if (posts.length === 0) return <p>No posts yet.</p>
 
+        const delPost = async (postID) => {
+            try {
+            const res = await fetch(`http://localhost:8800/posts/${postID}`, {
+                method: 'DELETE'
+            })
+            const raw = await res.text()
+            console.log(raw)
+            // remove from UI without refetching
+            setPosts(prev => prev.filter(p => p.postID !== postID))
+            } catch (err) {
+            console.error("Delete failed:", err)
+            }
+        }
+
         return (
             <div className="card-list">
             {posts.map(post => (
@@ -36,6 +50,10 @@ const Homepage = () => {
                 <div className="card-left">
                     <span className="card-sub">@{user.username}</span>
                     <p className="card-content">{post.postContent}</p>
+                    <div className="card-actions">
+                        <button>Edit</button>
+                        <button onClick={() => delPost(post.postID)}>Delete</button>
+                    </div>
                 </div>
                 <span className="card-status">{post.privStatus}</span>
                 </div>
@@ -63,6 +81,20 @@ const Homepage = () => {
             return 'General Board'
         }
 
+        const delBoard = async (boardID) => {
+            try {
+            const res = await fetch(`http://localhost:8800/boards/${boardID}`, {
+                method: 'DELETE'
+            })
+            const raw = await res.text()
+            console.log(raw)
+            // remove from UI without refetching
+            setBoards(prev => prev.filter(b => b.boardID !== boardID))
+            } catch (err) {
+            console.error("Delete failed:", err)
+            }
+        }
+
         return (
             <div className="card-list">
             {boards.map(board => (
@@ -71,11 +103,9 @@ const Homepage = () => {
                     <span className="card-sub">{getDetail(board)}</span>
                     <p className="card-sub">{board.boardDesc}</p>
                     <div className="card-actions">
-                        <button>Leave</button>
                         <button>Edit</button>
-                        <button>Delete</button>
+                        <button onClick={() => delBoard(board.boardID)}>Delete</button>
                     </div>
-                    
                 </div>
                 <div className="card-right">
                     <span className="card-status">{board.privStatus}</span>
@@ -96,6 +126,7 @@ const Homepage = () => {
             .catch(err => console.error(err))
         }, [userID])
 
+
         if (groups.length === 0) return <p className="empty">No groups yet.</p>
 
         const getDetail = (group) => {
@@ -103,6 +134,35 @@ const Homepage = () => {
             if (group.groupType === 'Major')  return `Department: ${group.department}`
             if (group.groupType === 'Club')   return `Club Rep Name: ${group.repFname} ${group.repLname}`
             return 'General Group'
+        }
+
+        const delGroup = async (groupID) => {
+            try {
+            const res = await fetch(`http://localhost:8800/groups/${groupID}`, {
+                method: 'DELETE'
+            })
+            const raw = await res.text()
+            console.log(raw)
+            // remove from UI without refetching
+            setGroups(prev => prev.filter(g => g.groupID !== groupID))
+            } catch (err) {
+            console.error("Delete failed:", err)
+            }
+        }
+
+        const leaveGroup = async (userID, groupID) => {
+            try {
+                const res = await fetch(`http://localhost:8800/groups/leave`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userID, groupID })
+                })
+                const raw = await res.text()
+                console.log(raw)
+                setGroups(prev => prev.filter(g => g.groupID !== groupID))
+            } catch (err) {
+                console.error("Leave failed:", err)
+            }
         }
 
         return (
@@ -113,15 +173,15 @@ const Homepage = () => {
                     <span className="card-sub">{getDetail(group)}</span>
                     <p className="card-sub">{group.groupDesc}</p>
                     <div className="card-actions">
-                        <button className="card-button">Leave</button>
-                        <button className="card-button">Edit</button>
-                        <button className="card-button">Delete</button>
+                        <button onClick={() => leaveGroup(user.userID, group.groupID)}>Leave</button>
+                        <button>Edit</button>
+                        <button onClick={() => delGroup(group.groupID)}>Delete</button>
                     </div>
                     
                 </div>
                 <div className="card-right">
                     <span className="card-detail" >{group.groupName}</span>
-                    <button className="card-button">{group.numberOfMembers} members</button>
+                    <button className="card-button">{group.numMembers} members</button>
                 </div>
                 </div>
             ))}

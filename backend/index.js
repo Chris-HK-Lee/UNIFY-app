@@ -85,40 +85,42 @@ app.listen(8800, () => {
             if (err) return res.status(500).json(err)
             const groupID = rows[0].nextID
 
-            const postQuery = "INSERT INTO SOCIAL_GROUP (groupID, groupName, groupDesc, userID) VALUES (?, ?, ?, ?)"
-            db.query(postQuery, [groupID, groupName, groupDesc, userID], (err, result) => {
-                if (err) {
-                    console.error("Group insert failed:", err.message)
-                    return res.status(500).json(err)
-                }
-                if (choice == 'course'){
-                    const postQuery = "INSERT INTO COURSE (groupID, courseCode, userID) VALUES (?, ?, ?)"
-                    db.query(postQuery, [groupID, courseCode, userID], (err, result) => {
-                        if (err) {
-                            console.error("Course insert failed:", err.message)
-                            return res.status(500).json(err)
-                        }
-                    })
-                }
-                if (choice == 'major'){
-                    const postQuery = "INSERT INTO MAJOR (groupID, department, userID) VALUES (?, ?, ?)"
-                    db.query(postQuery, [groupID, department, userID], (err, result) => {
-                        if (err) {
-                            console.error("Major insert failed:", err.message)
-                            return res.status(500).json(err)
-                        }
-                    })
-                }
-                if (choice == 'club'){
-                    const postQuery = "INSERT INTO CLUB (groupID, clubRepID, userID) VALUES (?, ?, ?)"
-                    db.query(postQuery, [groupID, clubRepID, userID], (err, result) => {
-                        if (err) {
-                            console.error("Club insert failed:", err.message)
-                            return res.status(500).json(err)
-                        }
-                    })
-                }
-                return res.json("Group created successfully")
+            const groupQuery = "INSERT INTO SOCIAL_GROUP (groupID, groupName, groupDesc, userID) VALUES (?, ?, ?, ?)"
+            db.query(groupQuery, [groupID, groupName, groupDesc, userID], (err) => {
+            if (err) return res.status(500).json(err)
+
+            // helper to add creator to GROUP_MEMBERS then respond
+            const addMemberAndRespond = (message) => {
+                db.query("INSERT INTO GROUP_MEMBERS (groupID, userID) VALUES (?, ?)", [groupID, userID], (err) => {
+                if (err) return res.status(500).json(err)
+                return res.json(message)
+                })
+            }
+
+            if (choice === 'Course') {
+                const q = "INSERT INTO COURSE (groupID, courseCode, userID) VALUES (?, ?, ?)"
+                db.query(q, [groupID, courseCode, userID], (err) => {
+                if (err) return res.status(500).json(err)
+                addMemberAndRespond("Course group created successfully")
+                })
+
+            } else if (choice === 'Major') {
+                const q = "INSERT INTO MAJOR (groupID, department, userID) VALUES (?, ?, ?)"
+                db.query(q, [groupID, department, userID], (err) => {
+                if (err) return res.status(500).json(err)
+                addMemberAndRespond("Major group created successfully")
+                })
+
+            } else if (choice === 'Club') {
+                const q = "INSERT INTO CLUB (groupID, clubRepID, userID) VALUES (?, ?, ?)"
+                db.query(q, [groupID, clubRepID, userID], (err) => {
+                if (err) return res.status(500).json(err)
+                addMemberAndRespond("Club group created successfully")
+                })
+
+            } else {
+                addMemberAndRespond("General group created successfully")
+            }
             })
         })
     })
@@ -178,7 +180,20 @@ app.listen(8800, () => {
         })
     })
 
+    app.delete("/posts/:postID", (req, res) => {
+        const { postID } = req.params
+        console.log("Deleting post:", postID)
+
+        //delete subtypes first due to foreign key constraints
+        db.query("DELETE FROM POSTS WHERE postID = ?", [postID], (err) => {
+            if (err) return res.status(500).json(err)
+            return res.json("Post deleted successfully")
+            
+        })
+    })
+
     app.get("/boards/user/:userID", (req, res) => {
+        //get all boards, and specify where they are to response
         const postQuery = `SELECT b.boardID, b.boardDesc, b.privStatus,
             CASE
                 WHEN e.boardID IS NOT NULL THEN 'Event'
@@ -197,24 +212,67 @@ app.listen(8800, () => {
         })
     })
 
+    app.delete("/groups/leave", (req, res) => {
+        const { userID, groupID } = req.body
+        console.log("Leaving group:", groupID, "user:", userID)
+
+        db.query("DELETE FROM GROUP_MEMBERS WHERE groupID = ? AND userID = ?", [groupID, userID], (err) => {
+            if (err) return res.status(500).json(err)
+            return res.json("Left group successfully")
+        })
+    })
+
+    app.delete("/boards/:boardID", (req, res) => {
+        const { boardID } = req.params
+        console.log("Deleting board:", boardID)
+
+        //delete subtypes first due to foreign key constraints
+        db.query("DELETE FROM EVENTBOARD WHERE boardID = ?", [boardID], (err) => {
+        db.query("DELETE FROM JOBBOARD WHERE boardID = ?", [boardID], (err) => {
+        db.query("DELETE FROM QUESTIONBOARD WHERE boardID = ?", [boardID], (err) => {
+        db.query("DELETE FROM UPLOADED WHERE boardID = ?", [boardID], (err) => {
+        db.query("DELETE FROM BOARDS WHERE boardID = ?", [boardID], (err) => {
+            if (err) return res.status(500).json(err)
+            return res.json("Board deleted successfully")
+        })})})})})
+    })
+
     app.get("/groups/user/:userID", (req, res) => {
-        const postQuery = `SELECT sg.groupID, sg.groupName, sg.groupDesc, sg.numberOfMembers,
-            CASE
-                WHEN c.groupID IS NOT NULL THEN 'Course'
-                WHEN m.groupID IS NOT NULL THEN 'Major'
-                WHEN cl.groupID IS NOT NULL THEN 'Club'
-            ELSE 'General'
+        //get all groups, and specify where they are to response
+        const postQuery = `SELECT sg.groupID, sg.groupName, sg.groupDesc, COUNT(gm.userID) AS numMembers,
+        CASE
+            WHEN c.groupID IS NOT NULL THEN 'Course'
+            WHEN m.groupID IS NOT NULL THEN 'Major'
+            WHEN cl.groupID IS NOT NULL THEN 'Club'
+        ELSE 'General'
             END AS groupType, c.courseCode, m.department, cl.clubRepID, u.fname AS repFname, u.lname AS repLname
-            FROM SOCIAL_GROUP sg
+        FROM SOCIAL_GROUP sg
+            LEFT JOIN GROUP_MEMBERS gm ON sg.groupID = gm.groupID
             LEFT JOIN COURSE c ON sg.groupID = c.groupID
             LEFT JOIN MAJOR m ON sg.groupID = m.groupID
             LEFT JOIN CLUB cl ON sg.groupID = cl.groupID
             LEFT JOIN USERS u ON cl.clubRepID = u.userID
-            WHERE sg.userID = ?`
+            WHERE gm.userID = ?
+        GROUP BY sg.groupID, sg.groupName, sg.groupDesc, groupType, c.courseCode, m.department, cl.clubRepID, u.fname, u.lname`
         db.query(postQuery, [req.params.userID], (err, data) => {
             if (err) return res.status(500).json(err)
             return res.json(data)
         })
+    })
+
+     app.delete("/groups/:groupID", (req, res) => {
+        const { groupID } = req.params
+        console.log("Deleting group:", groupID)
+
+        //delete subtypes first due to foreign key constraints
+        db.query("DELETE FROM GROUP_MEMBERS WHERE groupID = ?", [groupID], (err) => {
+        db.query("DELETE FROM MAJOR WHERE groupID = ?", [groupID], (err) => {
+        db.query("DELETE FROM COURSE WHERE groupID = ?", [groupID], (err) => {
+        db.query("DELETE FROM CLUB WHERE groupID = ?", [groupID], (err) => {
+        db.query("DELETE FROM SOCIAL_GROUP WHERE groupID = ?", [groupID], (err) => {
+            if (err) return res.status(500).json(err)
+            return res.json("Group deleted successfully")
+        })})})})})
     })
 
     // checking db for registering new users
