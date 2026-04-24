@@ -33,8 +33,11 @@ const Homepage = () => {
             <div className="card-list">
             {posts.map(post => (
                 <div className="card" key={post.postID}>
-                <p className="card-content">{post.postContent}</p>
-                <span className="card-detail">{post.privStatus}</span>
+                <div className="card-left">
+                    <span className="card-sub">@{user.username}</span>
+                    <p className="card-content">{post.postContent}</p>
+                </div>
+                <span className="card-status">{post.privStatus}</span>
                 </div>
             ))}
             </div>
@@ -75,7 +78,7 @@ const Homepage = () => {
                     
                 </div>
                 <div className="card-right">
-                    <span className="card-detail">{board.privStatus}</span>
+                    <span className="card-status">{board.privStatus}</span>
                 </div>
                 </div>
             ))}
@@ -158,7 +161,8 @@ const Homepage = () => {
       <div className="sidebar">
         <div className="sidebar-user">
           <div>
-            <p className="sidebar-name">{user?.username}</p>
+            <p className="sidebar-name">{user?.fname} {user?.lname}</p>
+            <p className="sidebar-acc">@{user?.username}</p>
             <p className="sidebar-type">{user?.accountType}</p>
           </div>
         </div>
