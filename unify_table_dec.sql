@@ -49,7 +49,7 @@ CREATE TABLE SOCIAL_GROUP (
     groupName       VARCHAR(255),
     groupDesc       VARCHAR(255),
     userID          INT,
-    numberOfMembers INT DEFAULT 0,
+    numberOfMembers INT DEFAULT 1,
     CONSTRAINT pk_social_group      PRIMARY KEY (groupID),
     CONSTRAINT fk_social_group_userID FOREIGN KEY (userID) REFERENCES USERS(userID)
 );

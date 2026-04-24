@@ -41,8 +41,8 @@ const Homepage = () => {
         )
     }
 
-        const UserBoards = ({ userID }) => {
-        const [boards, setBoards] = useState([])
+    const UserBoards = ({ userID }) => {
+    const [boards, setBoards] = useState([])
 
         useEffect(() => {
             fetch(`http://localhost:8800/boards/user/${userID}`)
@@ -52,13 +52,31 @@ const Homepage = () => {
         }, [userID])
 
         if (boards.length === 0) return <p className="empty">No boards yet.</p>
+        
+        const getDetail = (board) => {
+            if (board.boardType === 'Question') return `Category: ${board.category}`
+            if (board.boardType === 'Event')  return `Time: ${board.eventTime} | Location: ${board.eventLoc}`
+            if (board.boardType === 'Job')  return `Field: ${board.jobfield} | Employer: ${board.employerName} | Deadline: ${board.appDeadline}`
+            return 'General Board'
+        }
 
         return (
             <div className="card-list">
             {boards.map(board => (
-                <div className="card" key={board.boardID}>
-                <p className="card-content">{board.boardDesc}</p>
-                <span className="card-detail">{board.privStatus}</span>
+                <div className="card" key={board.groupID}>
+                <div className="card-left">
+                    <span className="card-sub">{getDetail(board)}</span>
+                    <p className="card-sub">{board.boardDesc}</p>
+                    <div className="card-actions">
+                        <button>Leave</button>
+                        <button>Edit</button>
+                        <button>Delete</button>
+                    </div>
+                    
+                </div>
+                <div className="card-right">
+                    <span className="card-detail">{board.privStatus}</span>
+                </div>
                 </div>
             ))}
             </div>
@@ -77,12 +95,31 @@ const Homepage = () => {
 
         if (groups.length === 0) return <p className="empty">No groups yet.</p>
 
+        const getDetail = (group) => {
+            if (group.groupType === 'Course') return `Course: ${group.courseCode}`
+            if (group.groupType === 'Major')  return `Department: ${group.department}`
+            if (group.groupType === 'Club')   return `Club Rep Name: ${group.repFname} ${group.repLname}`
+            return 'General Group'
+        }
+
         return (
             <div className="card-list">
             {groups.map(group => (
                 <div className="card" key={group.groupID}>
-                <p className="card-content">{group.groupDesc}</p>
-                <span className="card-detail">{group.groupName}</span>
+                <div className="card-left">
+                    <span className="card-sub">{getDetail(group)}</span>
+                    <p className="card-sub">{group.groupDesc}</p>
+                    <div className="card-actions">
+                        <button className="card-button">Leave</button>
+                        <button className="card-button">Edit</button>
+                        <button className="card-button">Delete</button>
+                    </div>
+                    
+                </div>
+                <div className="card-right">
+                    <span className="card-detail" >{group.groupName}</span>
+                    <button className="card-button">{group.numberOfMembers} members</button>
+                </div>
                 </div>
             ))}
             </div>

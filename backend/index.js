@@ -179,7 +179,18 @@ app.listen(8800, () => {
     })
 
     app.get("/boards/user/:userID", (req, res) => {
-        const postQuery = "SELECT * FROM BOARDS WHERE userID = ?"
+        const postQuery = `SELECT b.boardID, b.boardDesc, b.privStatus,
+            CASE
+                WHEN e.boardID IS NOT NULL THEN 'Event'
+                WHEN j.boardID IS NOT NULL THEN 'Job'
+                WHEN q.boardID IS NOT NULL THEN 'Question'
+            ELSE 'General'
+            END AS boardType, e.eventTime, e.eventLoc, q.category, j.jobfield, j.employerName, j.appDeadline
+            FROM BOARDS b
+            LEFT JOIN EVENTBOARD e ON e.boardID = b.boardID
+            LEFT JOIN JOBBOARD j ON j.boardID = b.boardID
+            LEFT JOIN QUESTIONBOARD q ON q.boardID = b.boardID
+            WHERE b.userID = ?`
         db.query(postQuery, [req.params.userID], (err, data) => {
             if (err) return res.status(500).json(err)
             return res.json(data)
@@ -187,7 +198,19 @@ app.listen(8800, () => {
     })
 
     app.get("/groups/user/:userID", (req, res) => {
-        const postQuery = "SELECT * FROM SOCIAL_GROUP WHERE userID = ?"
+        const postQuery = `SELECT sg.groupID, sg.groupName, sg.groupDesc, sg.numberOfMembers,
+            CASE
+                WHEN c.groupID IS NOT NULL THEN 'Course'
+                WHEN m.groupID IS NOT NULL THEN 'Major'
+                WHEN cl.groupID IS NOT NULL THEN 'Club'
+            ELSE 'General'
+            END AS groupType, c.courseCode, m.department, cl.clubRepID, u.fname AS repFname, u.lname AS repLname
+            FROM SOCIAL_GROUP sg
+            LEFT JOIN COURSE c ON sg.groupID = c.groupID
+            LEFT JOIN MAJOR m ON sg.groupID = m.groupID
+            LEFT JOIN CLUB cl ON sg.groupID = cl.groupID
+            LEFT JOIN USERS u ON cl.clubRepID = u.userID
+            WHERE sg.userID = ?`
         db.query(postQuery, [req.params.userID], (err, data) => {
             if (err) return res.status(500).json(err)
             return res.json(data)
