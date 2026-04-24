@@ -41,9 +41,9 @@ function Register() {
             })
             const result = await res.json()
             if (!res.ok) {
-                setServerError(result)
+                setServerError(typeof result === "string" ? result : "Something went wrong. Please try again.")
             } else {
-                setSuccess(result)
+                setSuccess(typeof result === "string" ? result : "Success!")
             }
         } catch (err) {
             setServerError("Something went wrong. Please try again.")
@@ -136,7 +136,7 @@ function Login() {
             })
             const result = await res.json()
             if (!res.ok) {
-                setServerError(result)
+                setServerError(typeof result === "string" ? result : "Something went wrong. Please try again.")
             } else {
                 sessionStorage.setItem("user", JSON.stringify(result))
                 navigate("/homepage", { state: { userID: result.userID } }) // seding userId to homepage
@@ -204,7 +204,7 @@ function AdminLogin() {
             })
             const result = await res.json()
             if (!res.ok) {
-                setServerError(result)
+                setServerError(typeof result === "string" ? result : "Something went wrong. Please try again.")
             } else {
                 sessionStorage.setItem("user", JSON.stringify(result))
                 navigate("/homepage", { state: { userID: result.userID } })
