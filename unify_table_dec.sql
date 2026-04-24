@@ -82,6 +82,7 @@ CREATE TABLE UNIPAGE(
     userID INT NOT NULL,
     UniName VARCHAR(255),
     UniDesc VARCHAR(255),
+    approved TINYINT(1) DEFAULT 0,
     CONSTRAINT fk_uni_user_id FOREIGN KEY (userID) REFERENCES USERS(userID)
 );
 
@@ -89,6 +90,7 @@ CREATE TABLE COMPPAGE (
     userID INT NOT NULL,
     CompName VARCHAR(255),
     CompDesc VARCHAR(255),
+    approved TINYINT(1) DEFAULT 0,
     CONSTRAINT fk_comp_user_id FOREIGN KEY (userID) REFERENCES USERS(userID)
 );
 
@@ -145,4 +147,13 @@ CREATE TABLE JOBBOARD (
     CONSTRAINT fk_jb_user_id FOREIGN KEY (userID) REFERENCES USERS(userID),
     CONSTRAINT fk_jb_board_id FOREIGN KEY (boardID) REFERENCES BOARDS(boardID)
 );
+
+INSERT INTO USERS (userID, fname, lname, username, passwords)
+VALUES (999, 'Admin', 'User', 'admin', 'admin');
+
+INSERT INTO ADMINS (ADMINSID, userID)
+VALUES (999, 999);
+
+INSERT INTO STUDENT (userID, personalEmail)
+VALUES (999, 'admin@admin.com');
 

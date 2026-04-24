@@ -12,7 +12,7 @@ app.listen(8800, () => {
     const db = mysql.createConnection({
         host: "localhost",
         user: "root",
-        password: "",
+        password: "Asiancanadian1!",
         database: "unify"
     })
 
@@ -239,7 +239,7 @@ app.listen(8800, () => {
             const newUserID = rows[0].nextID
 
         // Insert into USERS first
-        const userQ = "INSERT INTO USERS (userID, fname, lname, username, password) VALUES (?, ?, ?, ?, ?)"
+        const userQ = "INSERT INTO USERS (userID, fname, lname, username, passwords) VALUES (?, ?, ?, ?, ?)"
         db.query(userQ, [newUserID, fname, lname, username, password], (err, result) => {
             if (err) return res.status(500).json(err)
 
@@ -263,7 +263,7 @@ app.listen(8800, () => {
 
     // Check across all three subtype tables
     const q = `
-        SELECT u.userID, u.fname, u.lname, u.username, u.password, s.personalEmail, f.universityEmail, c.businessEmail
+        SELECT u.userID, u.fname, u.lname, u.username, u.passwords, s.personalEmail, f.universityEmail, c.businessEmail
         FROM USERS u
         LEFT JOIN STUDENT s ON u.userID = s.userID
         LEFT JOIN FACULTY f ON u.userID = f.userID
@@ -273,7 +273,7 @@ app.listen(8800, () => {
     db.query(q, [email, email, email], (err, data) => {
         if (err) return res.status(500).json(err)
         if (data.length === 0) return res.status(401).json("Invalid credentials")
-        if (data[0].password !== password) return res.status(401).json("Invalid credentials")
+        if (data[0].passwords !== password) return res.status(401).json("Invalid credentials")
 
         const user = data[0]
         let accountType = null
@@ -288,7 +288,7 @@ app.listen(8800, () => {
     app.post("/admin-login", (req, res) => {
         const { email, password } = req.body
         const q = `
-            SELECT u.userID, u.fname, u.lname, u.username, u.password, a.ADMINSID
+            SELECT u.userID, u.fname, u.lname, u.username, u.passwords, a.ADMINSID
             FROM USERS u
             INNER JOIN ADMINS a ON u.userID = a.userID
             LEFT JOIN STUDENT s ON u.userID = s.userID
@@ -299,8 +299,110 @@ app.listen(8800, () => {
         db.query(q, [email, email, email], (err, data) => {
             if (err) return res.status(500).json(err)
             if (data.length === 0) return res.status(401).json("Invalid credentials")
-            if (data[0].password !== password) return res.status(401).json("Invalid credentials")
+            if (data[0].passwords !== password) return res.status(401).json("Invalid credentials")
             return res.json({ ...data[0], accountType: "admin" })
+        })
+    })
+
+    // University page endpoints
+    app.get("/unipage/:userID", (req, res) => {
+        db.query("SELECT * FROM UNIPAGE WHERE userID = ?", [req.params.userID], (err, data) => {
+            if (err) return res.status(500).json(err)
+            return res.json(data[0] || null)
+        })
+    })
+
+    app.post("/unipage/:userID", (req, res) => {
+        const { UniName, UniDesc } = req.body
+        const { userID } = req.params
+        db.query("SELECT userID FROM UNIPAGE WHERE userID = ?", [userID], (err, data) => {
+            if (err) { console.error("unipage select err:", err); return res.status(500).json(err.sqlMessage || err) }
+            if (data.length > 0) {
+                db.query("UPDATE UNIPAGE SET UniName = ?, UniDesc = ?, approved = 0 WHERE userID = ?", [UniName, UniDesc, userID], (err2) => {
+                    if (err2) { console.error("unipage update err:", err2); return res.status(500).json(err2.sqlMessage || err2) }
+                    return res.json("University page updated")
+                })
+            } else {
+                db.query("INSERT INTO UNIPAGE (userID, UniName, UniDesc, approved) VALUES (?, ?, ?, 0)", [userID, UniName, UniDesc], (err2) => {
+                    if (err2) { console.error("unipage insert err:", err2); return res.status(500).json(err2.sqlMessage || err2) }
+                    return res.json("University page created")
+                })
+            }
+        })
+    })
+
+    // All approved university pages (for browsing)
+    app.get("/unipages", (req, res) => {
+        db.query("SELECT u.userID, u.UniName, u.UniDesc FROM UNIPAGE u WHERE u.approved = 1", (err, data) => {
+            if (err) return res.status(500).json(err)
+            return res.json(data)
+        })
+    })
+
+    // Company page endpoints
+    app.get("/comppage/:userID", (req, res) => {
+        db.query("SELECT * FROM COMPPAGE WHERE userID = ?", [req.params.userID], (err, data) => {
+            if (err) return res.status(500).json(err)
+            return res.json(data[0] || null)
+        })
+    })
+
+    app.post("/comppage/:userID", (req, res) => {
+        const { CompName, CompDesc } = req.body
+        const { userID } = req.params
+        db.query("SELECT userID FROM COMPPAGE WHERE userID = ?", [userID], (err, data) => {
+            if (err) return res.status(500).json(err)
+            if (data.length > 0) {
+                // reset approved to 0 on edit so admin must re-approve
+                db.query("UPDATE COMPPAGE SET CompName = ?, CompDesc = ?, approved = 0 WHERE userID = ?", [CompName, CompDesc, userID], (err2) => {
+                    if (err2) return res.status(500).json(err2)
+                    return res.json("Company page updated")
+                })
+            } else {
+                db.query("INSERT INTO COMPPAGE (userID, CompName, CompDesc, approved) VALUES (?, ?, ?, 0)", [userID, CompName, CompDesc], (err2) => {
+                    if (err2) return res.status(500).json(err2)
+                    return res.json("Company page created")
+                })
+            }
+        })
+    })
+
+    // All approved company pages (for browsing)
+    app.get("/comppages", (req, res) => {
+        db.query("SELECT c.userID, c.CompName, c.CompDesc FROM COMPPAGE c WHERE c.approved = 1", (err, data) => {
+            if (err) return res.status(500).json(err)
+            return res.json(data)
+        })
+    })
+
+    // Admin: get all pages pending approval
+    app.get("/admin/pages", (req, res) => {
+        const uniQ = `SELECT p.userID, p.UniName, p.UniDesc, p.approved, u.fname, u.lname
+                      FROM UNIPAGE p JOIN USERS u ON p.userID = u.userID`
+        const compQ = `SELECT p.userID, p.CompName, p.CompDesc, p.approved, u.fname, u.lname
+                       FROM COMPPAGE p JOIN USERS u ON p.userID = u.userID`
+        db.query(uniQ, (err, uni) => {
+            if (err) { console.error("admin uni err:", err); return res.status(500).json(err.sqlMessage || err) }
+            db.query(compQ, (err2, comp) => {
+                if (err2) { console.error("admin comp err:", err2); return res.status(500).json(err2.sqlMessage || err2) }
+                return res.json({ uni, comp })
+            })
+        })
+    })
+
+    // Admin: approve a university page
+    app.post("/admin/approve/uni/:userID", (req, res) => {
+        db.query("UPDATE UNIPAGE SET approved = 1 WHERE userID = ?", [req.params.userID], (err) => {
+            if (err) return res.status(500).json(err)
+            return res.json("University page approved")
+        })
+    })
+
+    // Admin: approve a company page
+    app.post("/admin/approve/comp/:userID", (req, res) => {
+        db.query("UPDATE COMPPAGE SET approved = 1 WHERE userID = ?", [req.params.userID], (err) => {
+            if (err) return res.status(500).json(err)
+            return res.json("Company page approved")
         })
     })
 })
