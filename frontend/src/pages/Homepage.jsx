@@ -8,6 +8,7 @@ import Groups from './Groups'
 import Cpage from './Cpage'
 import Upage from './Upage'
 import AdminPages from './AdminPages'
+import AdminUsers from './AdminUsers'
 
 
 const Homepage = () => {
@@ -155,6 +156,7 @@ const Homepage = () => {
     if (activePage === 'cpage') return <Cpage />
     if (activePage === 'upage') return <Upage />
     if (activePage === 'adminpages') return <AdminPages />
+    if (activePage === 'adminusers') return <AdminUsers />
   }
 
   return (
@@ -178,6 +180,7 @@ const Homepage = () => {
           <button className={activePage === 'upage' ? 'active' : ''} onClick={() => setActivePage('upage')}>University Pages</button>
           <button className={activePage === 'cpage' ? 'active' : ''} onClick={() => setActivePage('cpage')}>Company Pages</button>
           {user?.accountType === 'admin' && <button className={activePage === 'adminpages' ? 'active' : ''} onClick={() => setActivePage('adminpages')}>Page Approvals</button>}
+          {user?.accountType === 'admin' && <button className={activePage === 'adminusers' ? 'active' : ''} onClick={() => setActivePage('adminusers')}>Manage Users</button>}
         </nav>
 
         <button className="sidebar-logout" onClick={() => { sessionStorage.removeItem("user") 

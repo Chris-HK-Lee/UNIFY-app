@@ -405,4 +405,79 @@ app.listen(8800, () => {
             return res.json("Company page approved")
         })
     })
+
+    // Admin: remove a university page
+    app.delete("/admin/page/uni/:userID", (req, res) => {
+        db.query("DELETE FROM UNIPAGE WHERE userID = ?", [req.params.userID], (err) => {
+            if (err) return res.status(500).json(err)
+            return res.json("University page removed")
+        })
+    })
+
+    // Admin: remove a company page
+    app.delete("/admin/page/comp/:userID", (req, res) => {
+        db.query("DELETE FROM COMPPAGE WHERE userID = ?", [req.params.userID], (err) => {
+            if (err) return res.status(500).json(err)
+            return res.json("Company page removed")
+        })
+    })
+
+    // Admin: get all users
+    app.get("/admin/users", (req, res) => {
+        const q = `
+            SELECT u.userID, u.fname, u.lname, u.username,
+                CASE
+                    WHEN a.userID IS NOT NULL THEN 'admin'
+                    WHEN s.userID IS NOT NULL THEN 'student'
+                    WHEN f.userID IS NOT NULL THEN 'faculty'
+                    WHEN c.userID IS NOT NULL THEN 'company'
+                END AS accountType,
+                COALESCE(s.personalEmail, f.universityEmail, c.businessEmail) AS email
+            FROM USERS u
+            LEFT JOIN ADMINS a ON u.userID = a.userID
+            LEFT JOIN STUDENT s ON u.userID = s.userID
+            LEFT JOIN FACULTY f ON u.userID = f.userID
+            LEFT JOIN COMPANY_REP c ON u.userID = c.userID
+        `
+        db.query(q, (err, data) => {
+            if (err) return res.status(500).json(err.sqlMessage || err)
+            return res.json(data)
+        })
+    })
+
+    // Admin: remove a user and all their subtype records
+    app.delete("/admin/user/:userID", (req, res) => {
+        const { userID } = req.params
+        const deletes = [
+            "DELETE FROM UNIPAGE WHERE userID = ?",
+            "DELETE FROM COMPPAGE WHERE userID = ?",
+            "DELETE FROM UPLOADED WHERE userID = ?",
+            "DELETE FROM POSTS WHERE userID = ?",
+            "DELETE FROM EVENTBOARD WHERE userID = ?",
+            "DELETE FROM QUESTIONBOARD WHERE userID = ?",
+            "DELETE FROM JOBBOARD WHERE userID = ?",
+            "DELETE FROM BOARDS WHERE userID = ?",
+            "DELETE FROM COURSE WHERE userID = ?",
+            "DELETE FROM MAJOR WHERE userID = ?",
+            "DELETE FROM CLUB WHERE userID = ?",
+            "DELETE FROM SOCIAL_GROUP WHERE userID = ?",
+            "DELETE FROM FRIEND WHERE friendID = ? OR friendeeID = ?",
+            "DELETE FROM ADMINS WHERE userID = ?",
+            "DELETE FROM STUDENT WHERE userID = ?",
+            "DELETE FROM FACULTY WHERE userID = ?",
+            "DELETE FROM COMPANY_REP WHERE userID = ?",
+            "DELETE FROM USERS WHERE userID = ?",
+        ]
+        let i = 0
+        const runNext = () => {
+            if (i >= deletes.length) return res.json("User removed")
+            const q = deletes[i++]
+            const params = q.includes("friendID") ? [userID, userID] : [userID]
+            db.query(q, params, (err) => {
+                if (err) { console.error("delete user err:", err); return res.status(500).json(err.sqlMessage || err) }
+                runNext()
+            })
+        }
+        runNext()
+    })
 })

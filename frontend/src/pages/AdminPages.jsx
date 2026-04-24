@@ -1,5 +1,10 @@
 import React, { useState, useEffect } from 'react'
 
+const btnStyle = (color) => ({
+    backgroundColor: color, color: "white", border: "none",
+    padding: "8px 16px", borderRadius: "4px", cursor: "pointer", marginLeft: "8px"
+})
+
 const AdminPages = () => {
     const [uni, setUni] = useState([])
     const [comp, setComp] = useState([])
@@ -19,6 +24,14 @@ const AdminPages = () => {
         const res = await fetch(`http://localhost:8800/admin/approve/${type}/${userID}`, { method: "POST" })
         const result = await res.json()
         setMessage(typeof result === "string" ? result : "Approved!")
+        load()
+    }
+
+    const remove = async (type, userID) => {
+        setMessage("")
+        const res = await fetch(`http://localhost:8800/admin/page/${type}/${userID}`, { method: "DELETE" })
+        const result = await res.json()
+        setMessage(typeof result === "string" ? result : "Removed!")
         load()
     }
 
@@ -43,12 +56,12 @@ const AdminPages = () => {
                             <p style={{ margin: "2px 0 0", fontSize: "0.85em", color: "#666" }}>Submitted by: {p.fname} {p.lname}</p>
                             <p style={{ margin: "4px 0 0" }}>{p.UniDesc || "(no description)"}</p>
                         </div>
-                        {!p.approved && (
-                            <button onClick={() => approve("uni", p.userID)}
-                                style={{ backgroundColor: "#4caf50", color: "white", border: "none", padding: "8px 16px", borderRadius: "4px", cursor: "pointer" }}>
-                                Approve
-                            </button>
-                        )}
+                        <div>
+                            {!p.approved && (
+                                <button onClick={() => approve("uni", p.userID)} style={btnStyle("#4caf50")}>Approve</button>
+                            )}
+                            <button onClick={() => remove("uni", p.userID)} style={btnStyle("#e53935")}>Remove</button>
+                        </div>
                     </div>
                 </div>
             ))}
@@ -63,12 +76,12 @@ const AdminPages = () => {
                             <p style={{ margin: "2px 0 0", fontSize: "0.85em", color: "#666" }}>Submitted by: {p.fname} {p.lname}</p>
                             <p style={{ margin: "4px 0 0" }}>{p.CompDesc || "(no description)"}</p>
                         </div>
-                        {!p.approved && (
-                            <button onClick={() => approve("comp", p.userID)}
-                                style={{ backgroundColor: "#4caf50", color: "white", border: "none", padding: "8px 16px", borderRadius: "4px", cursor: "pointer" }}>
-                                Approve
-                            </button>
-                        )}
+                        <div>
+                            {!p.approved && (
+                                <button onClick={() => approve("comp", p.userID)} style={btnStyle("#4caf50")}>Approve</button>
+                            )}
+                            <button onClick={() => remove("comp", p.userID)} style={btnStyle("#e53935")}>Remove</button>
+                        </div>
                     </div>
                 </div>
             ))}
