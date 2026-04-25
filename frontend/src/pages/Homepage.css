@@ -23,7 +23,7 @@
   background: none;
   font-size: 14px;
   font-weight: 500;
-  color: #888;
+  color: #000;
   cursor: pointer;
 }
 
@@ -64,10 +64,9 @@
 .card-detail {
   font-size: 16px;
   font-weight: 700;
-  color: #000;
+  color: #6b6b6b;
   padding: 4px 10px;
   border-radius: 10px;
-  text-transform: capitalize;
 }
 
 .card-status{
@@ -99,6 +98,12 @@
   color: #888;
 }
 
+.card-sub2 {
+  font-size: 10px;
+  color: #888;
+  text-transform: capitalize;
+}
+
 .card-actions {
   display: flex;
   gap: 8px;
@@ -115,14 +120,9 @@
 }
 
 .card-actions button:hover {
-  color: #ff6b6b;
-  cursor: pointer;
-}
-
-.card-actions button.active {
-  color: #ff6b6b;
+  color: #274b69;
   font-weight: 700;
-  /* not done yet, need to figure out edit details still */
+  cursor: pointer;
 }
 
 .card-button {
@@ -138,11 +138,6 @@
 .card-button:hover{
   color: #5b5b5b;
   cursor: pointer;
-}
-
-.card-button.active{
-  color: #5b5b5b;
-  font-weight: 700;
 }
 
 .sidebar {
@@ -168,6 +163,7 @@
   font-size: 14px;
   font-weight: 600;
   color: #1a1a2e;
+  text-transform: capitalize;
 }
 
 .sidebar-type {

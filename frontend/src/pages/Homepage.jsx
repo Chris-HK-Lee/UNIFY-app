@@ -1,6 +1,7 @@
-import React, { useState, useEffect }from 'react'
+import React, { useState, useEffect, useRef }from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import './Homepage.css'
+import ViewPopup from './viewPopup'
 import Create from './Create'
 import Posts from './Posts'
 import Boards from './Boards'
@@ -20,7 +21,7 @@ const Homepage = () => {
     const [profileTab, setProfileTab] = useState('posts')
 
     const UserPosts = ({ userID }) => {
-    const [posts, setPosts] = useState([])
+        const [posts, setPosts] = useState([])
 
         useEffect(() => {
             fetch(`http://localhost:8800/posts/user/${userID}`)
@@ -51,7 +52,7 @@ const Homepage = () => {
                 <div className="card" key={post.postID}>
                 <div className="card-left">
                     <span className="card-sub">@{user.username}</span>
-                    <p className="card-content">{post.postContent}</p>
+                    <span className="card-content">{post.postContent}</span>
                     <div className="card-actions">
                         <button>Edit</button>
                         <button onClick={() => delPost(post.postID)}>Delete</button>
@@ -65,7 +66,7 @@ const Homepage = () => {
     }
 
     const UserBoards = ({ userID }) => {
-    const [boards, setBoards] = useState([])
+        const [boards, setBoards] = useState([])
 
         useEffect(() => {
             fetch(`http://localhost:8800/boards/user/${userID}`)
@@ -103,9 +104,10 @@ const Homepage = () => {
                 <div className="card" key={board.groupID}>
                 <div className="card-left">
                     <span className="card-sub">{getDetail(board)}</span>
-                    <p className="card-sub">{board.boardDesc}</p>
+                    <span className="card-content">{board.boardDesc}</span>
                     <div className="card-actions">
                         <button>Edit</button>
+                        <button>Reply</button>
                         <button onClick={() => delBoard(board.boardID)}>Delete</button>
                     </div>
                 </div>
@@ -120,6 +122,8 @@ const Homepage = () => {
 
     const UserGroups = ({ userID }) => {
         const [groups, setGroups] = useState([])
+        const [popup, setPopup] = useState({ isOpen: false, groupID: null, groupName: '', members: [] })
+        const viewPopupRef = useRef()
 
         useEffect(() => {
             fetch(`http://localhost:8800/groups/user/${userID}`)
@@ -138,20 +142,6 @@ const Homepage = () => {
             return 'General Group'
         }
 
-        const delGroup = async (groupID) => {
-            try {
-            const res = await fetch(`http://localhost:8800/groups/${groupID}`, {
-                method: 'DELETE'
-            })
-            const raw = await res.text()
-            console.log(raw)
-            // remove from UI without refetching
-            setGroups(prev => prev.filter(g => g.groupID !== groupID))
-            } catch (err) {
-            console.error("Delete failed:", err)
-            }
-        }
-
         const leaveGroup = async (userID, groupID) => {
             try {
                 const res = await fetch(`http://localhost:8800/groups/leave`, {
@@ -167,46 +157,101 @@ const Homepage = () => {
             }
         }
 
-        return (
+        return(
+            <>
             <div className="card-list">
             {groups.map(group => (
                 <div className="card" key={group.groupID}>
                 <div className="card-left">
                     <span className="card-sub">{getDetail(group)}</span>
-                    <p className="card-sub">{group.groupDesc}</p>
+                    <span className="card-content">{group.groupDesc}</span>
                     <div className="card-actions">
-                        <button onClick={() => leaveGroup(user.userID, group.groupID)}>Leave</button>
                         <button>Edit</button>
-                        <button onClick={() => delGroup(group.groupID)}>Delete</button>
+                        <button onClick={() => leaveGroup(user.userID, group.groupID)}>Leave</button>
                     </div>
                     
                 </div>
                 <div className="card-right">
                     <span className="card-detail" >{group.groupName}</span>
-                    <button className="card-button">{group.numMembers} members</button>
+                    <button className="card-button" onClick={() => viewPopupRef.current.viewMembers(group)}>View {group.numMembers} members</button>
+                </div>
+                </div>
+            ))}
+            </div>
+
+            <ViewPopup ref={viewPopupRef} /> 
+            </>
+        )
+    }
+
+    const UserFriends = ({ userID }) => {
+        const [friends, setFriends] = useState([])
+
+        useEffect(() => {
+            fetch(`http://localhost:8800/friend/user/${userID}`)
+            .then(res => res.json())
+            .then(data => setFriends(data))
+            .catch(err => console.error(err))
+        }, [userID])
+
+        if (friends.length === 0) return <p className="empty">No friends yet.</p>
+
+        const unfriend = async (friendID, friendeeID) => {
+            try {
+                const res = await fetch(`http://localhost:8800/unfriend`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ friendID, friendeeID })
+                })
+                const raw = await res.text()
+                console.log(raw)
+                setFriends(prev => prev.filter(g => g.userID !== friendID))
+            } catch (err) {
+                console.error("Unfriend failed:", err)
+            }
+        }
+
+        return(
+            <div className="card-list">
+            {friends.map(friend => (
+                <div className="card" key={friend.userID}>
+                <div className="card-left">
+                    <span className="card-content">{friend.fname} {friend.lname}</span>
+                    <span className="card-sub">@{friend.username}</span>
+                    <span className="card-sub2">{friend.accountType}</span>
+                    
+                </div>
+                <div className="card-right">
+                    <div className="card-actions">
+                        <button onClick={() => unfriend(friend.userID, userID)}>Unfriend</button>
+                    </div>
                 </div>
                 </div>
             ))}
             </div>
         )
+
+        
     }
 
     const renderPage = () => {
         if (activePage === 'home')    
             return <div className="main-content">
-                <h2>Welcome, {user?.fname} {user?.lname}!</h2>
+                <h2>Welcome, {user?.fname}!</h2>
                 <p>Account type: {user?.accountType}</p>
                 <p>User ID: {userID}</p>
             <div className="profile-tabs">
                 <button className={profileTab === 'posts'  ? 'active' : ''} onClick={() => setProfileTab('posts')}>My Posts</button>
                 <button className={profileTab === 'boards' ? 'active' : ''} onClick={() => setProfileTab('boards')}>My Boards</button>
                 <button className={profileTab === 'groups' ? 'active' : ''} onClick={() => setProfileTab('groups')}>My Groups</button>
+                <button className={profileTab === 'friends' ? 'active' : ''} onClick={() => setProfileTab('friends')}>My Friends</button>
             </div>
 
             <div className="profile-tab-content">
                 {profileTab === 'posts'  && <UserPosts  userID={userID} />}
                 {profileTab === 'boards' && <UserBoards userID={userID} />}
                 {profileTab === 'groups' && <UserGroups userID={userID} />}
+                {profileTab === 'friends' && <UserFriends userID={userID} />}
             </div>
         </div>
     if (activePage === 'create') return <Create />

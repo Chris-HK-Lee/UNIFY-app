@@ -12,13 +12,18 @@ app.listen(8800, () => {
     const db = mysql.createConnection({
         host: "localhost",
         user: "root",
-        password: "Asiancanadian1!",
+        password: "",
         database: "unify"
     })
 
     app.use(express.json())
     app.use(cors())
 
+    app.get("/", (req, res) => {
+        res.json("Hello, this is the backend!")
+    })
+
+    //get all users
     app.get("/users", (req, res) => {
         const q = "SELECT * FROM users"
         db.query(q, (err, data) => {
@@ -31,10 +36,93 @@ app.listen(8800, () => {
         })
     })
 
-    app.get("/", (req, res) => {
-        res.json("Hello, this is the backend!")
+    // get one user's info from a userID
+    app.get("/users/:userID", (req, res) => {
+        const postQuery = `SELECT u.userID, u.fname, u.lname, u.username,
+                CASE
+                    WHEN a.ADMINSID IS NOT NULL THEN 'admin'
+                    WHEN s.userID   IS NOT NULL THEN 'student'
+                    WHEN f.userID   IS NOT NULL THEN 'faculty'
+                    WHEN c.userID   IS NOT NULL THEN 'company'
+                END AS accountType
+                FROM USERS u
+                LEFT JOIN ADMINS      a ON u.userID = a.userID
+                LEFT JOIN STUDENT     s ON u.userID = s.userID
+                LEFT JOIN FACULTY     f ON u.userID = f.userID
+                LEFT JOIN COMPANY_REP c ON u.userID = c.userID
+                WHERE u.userID = ?`
+        db.query(postQuery, [req.params.userID], (err, data) => {
+            if (err) return res.status(500).json(err)
+            if (data.length === 0) return res.status(404).json("User not found")
+            return res.json(data[0])
+        })
     })
 
+    app.get("/friend/check", (req, res) => {
+        const { friendID, friendeeID } = req.query
+        console.log("Checking friendship:", friendID, friendeeID)
+
+        db.query(
+            "SELECT * FROM FRIEND WHERE (friendID = ? AND friendeeID = ?) OR (friendID = ? AND friendeeID = ?)",
+            [friendID, friendeeID, friendeeID, friendID],
+            (err, rows) => {
+            if (err) return res.status(500).json(err)
+            return res.json({ areFriends: rows.length > 0 })
+            }
+        )
+    })
+
+    // freinding another user
+    app.post("/friend", (req, res) => {
+        const { friendID, friendeeID } = req.body
+        console.log("Friending user:", friendID, "from:", friendeeID)
+
+        db.query("INSERT INTO FRIEND (friendID, friendeeID) VALUES (?, ?)", [friendID, friendeeID], (err) => {
+            if (err) return res.status(500).json(err)
+            return res.json("Friended successfully")
+        })
+    })
+
+    // unfreinding another user
+    app.delete("/unfriend", (req, res) => {
+        const { friendID, friendeeID } = req.body
+        console.log("Unfriending user:", friendID, "from:", friendeeID)
+
+        db.query("DELETE FROM FRIEND WHERE (friendID = ? AND friendeeID = ?) OR (friendID = ? AND friendeeID = ?)", [friendID, friendeeID, friendeeID, friendID], (err) => {
+            if (err) return res.status(500).json(err)
+            return res.json("Unriended successfully")
+        })
+    })
+
+    // getting all of a users friends
+    app.get("/friend/user/:userID", (req, res) => {
+    const postQuery = `SELECT u.userID, u.fname, u.lname, u.username,
+        CASE
+            WHEN s.userID IS NOT NULL THEN 'student'
+            WHEN f.userID IS NOT NULL THEN 'faculty'
+            WHEN c.userID IS NOT NULL THEN 'company'
+            WHEN a.ADMINSID IS NOT NULL THEN 'admin'
+            ELSE 'unknown'
+        END AS accountType
+        FROM FRIEND fr
+        JOIN USERS u ON (
+        CASE 
+            WHEN fr.friendID = ? THEN fr.friendeeID
+            ELSE fr.friendID
+        END = u.userID
+        )
+        LEFT JOIN STUDENT s ON u.userID = s.userID
+        LEFT JOIN FACULTY f ON u.userID = f.userID
+        LEFT JOIN COMPANY_REP c ON u.userID = c.userID
+        LEFT JOIN ADMINS a ON u.userID = a.userID
+        WHERE fr.friendID = ? OR fr.friendeeID = ?`
+        db.query(postQuery, [req.params.userID, req.params.userID, req.params.userID], (err, data) => {
+            if (err) return res.status(500).json(err)
+            return res.json(data)
+        })
+    })
+    
+    //add a user directly
     app.post("/users", (req, res) => {
         const q = "INSERT INTO users (`userID`, `fname`, `lname`, `username`) VALUES (?)"
         const values = [
@@ -49,6 +137,7 @@ app.listen(8800, () => {
         })
     })
 
+    //creating posts
     app.post("/posts", (req, res) => {
         console.log("Posts hit:", req.body)
         const { postContent, privStatus, userID, boardID } = req.body
@@ -77,6 +166,7 @@ app.listen(8800, () => {
         })
     })
 
+    //creating groups
     app.post("/social_group", (req, res) => {
         console.log("Groups hit:", req.body)
         const { choice, groupName, groupDesc, courseCode, department, clubRepID, userID } = req.body
@@ -125,6 +215,7 @@ app.listen(8800, () => {
         })
     })
 
+    //creating boards
     app.post("/boards", (req, res) => {
         console.log("Boards hit:", req.body)
         const { choice, category, boardDesc, privStatus, eventTime, eventLoc, jobfield, employerName, appDeadline, userID } = req.body
@@ -172,6 +263,7 @@ app.listen(8800, () => {
         })
     })
 
+    //getting a user's posts
     app.get("/posts/user/:userID", (req, res) => {
         const postQuery = "SELECT * FROM POSTS WHERE userID = ?"
         db.query(postQuery, [req.params.userID], (err, data) => {
@@ -180,6 +272,19 @@ app.listen(8800, () => {
         })
     })
 
+    //getting posts that are different from a user's own
+    app.get("/otherPosts/user/:userID", (req, res) => {
+        // make sure to show posts that does not belong to user from req, and are public only
+        const postQuery = `SELECT p.postID, p.userID, p.postContent, p.privStatus, u.username, u.userID 
+        FROM POSTS p LEFT JOIN USERS u ON u.userID = p.userID 
+        WHERE NOT p.userID = ? AND p.privStatus = 'public'`
+        db.query(postQuery, [req.params.userID], (err, data) => {
+            if (err) return res.status(500).json(err)
+            return res.json(data)
+        })
+    })
+
+    //deleting a user's own post
     app.delete("/posts/:postID", (req, res) => {
         const { postID } = req.params
         console.log("Deleting post:", postID)
@@ -192,6 +297,7 @@ app.listen(8800, () => {
         })
     })
 
+    // getting a user's own boards
     app.get("/boards/user/:userID", (req, res) => {
         //get all boards, and specify where they are to response
         const postQuery = `SELECT b.boardID, b.boardDesc, b.privStatus,
@@ -212,16 +318,29 @@ app.listen(8800, () => {
         })
     })
 
-    app.delete("/groups/leave", (req, res) => {
-        const { userID, groupID } = req.body
-        console.log("Leaving group:", groupID, "user:", userID)
-
-        db.query("DELETE FROM GROUP_MEMBERS WHERE groupID = ? AND userID = ?", [groupID, userID], (err) => {
+    //getting boards that are different from a user's own
+    app.get("/otherBoards/user/:userID", (req, res) => {
+        // make sure to show boards that does not belong to user from req, and are public only
+        const postQuery = `SELECT b.boardID, b.userID, b.boardDesc, b.privStatus, u.username, u.userID,
+        CASE
+            WHEN e.boardID IS NOT NULL THEN 'Event'
+            WHEN j.boardID IS NOT NULL THEN 'Job'
+            WHEN q.boardID IS NOT NULL THEN 'Question'
+        ELSE 'General' 
+        END AS boardType, e.eventTime, e.eventLoc, q.category, j.jobfield, j.employerName, j.appDeadline
+        FROM BOARDS b
+        LEFT JOIN EVENTBOARD e ON e.boardID = b.boardID
+        LEFT JOIN JOBBOARD j ON j.boardID = b.boardID
+        LEFT JOIN QUESTIONBOARD q ON q.boardID = b.boardID 
+        LEFT JOIN USERS u ON u.userID = b.userID 
+        WHERE NOT b.userID = ? AND b.privStatus = 'public'`
+        db.query(postQuery, [req.params.userID], (err, data) => {
             if (err) return res.status(500).json(err)
-            return res.json("Left group successfully")
+            return res.json(data)
         })
     })
 
+    //deleting a user's own board
     app.delete("/boards/:boardID", (req, res) => {
         const { boardID } = req.params
         console.log("Deleting board:", boardID)
@@ -237,9 +356,38 @@ app.listen(8800, () => {
         })})})})})
     })
 
-    app.get("/groups/user/:userID", (req, res) => {
+    // leaving a group that a user is in
+    app.delete("/groups/leave", (req, res) => {
+        const { userID, groupID } = req.body
+        console.log("Leaving group:", groupID, "user:", userID)
+
+        db.query("DELETE FROM GROUP_MEMBERS WHERE groupID = ? AND userID = ?", [groupID, userID], (err) => {
+            if (err) return res.status(500).json(err)
+            return res.json("Left group successfully")
+        })
+    })
+
+    // joining a group that a user is not in
+    app.post("/groups/join", (req, res) => {
+        const { userID, groupID } = req.body
+        console.log("Joining group:", groupID, "user:", userID)
+
+        // first check if already a member
+        db.query("SELECT * FROM GROUP_MEMBERS WHERE groupID = ? AND userID = ?", [groupID, userID], (err, rows) => {
+            if (err) return res.status(500).json(err)
+            if (rows.length > 0) return res.status(409).json("Already a member of this group")
+
+            db.query("INSERT INTO GROUP_MEMBERS (groupID, userID) VALUES (?, ?)", [groupID, userID], (err) => {
+            if (err) return res.status(500).json(err)
+            return res.json("Joined group successfully")
+            })
+        })
+    })
+
+    // getting all groups a user is not in
+    app.get("/otherGroups/user/:userID", (req, res) => {
         //get all groups, and specify where they are to response
-        const postQuery = `SELECT sg.groupID, sg.groupName, sg.groupDesc, COUNT(gm.userID) AS numMembers,
+        const postQuery = `SELECT sg.groupID, sg.groupName, sg.groupDesc, COUNT(DISTINCT gm.userID) AS numMembers,
         CASE
             WHEN c.groupID IS NOT NULL THEN 'Course'
             WHEN m.groupID IS NOT NULL THEN 'Major'
@@ -252,7 +400,7 @@ app.listen(8800, () => {
             LEFT JOIN MAJOR m ON sg.groupID = m.groupID
             LEFT JOIN CLUB cl ON sg.groupID = cl.groupID
             LEFT JOIN USERS u ON cl.clubRepID = u.userID
-            WHERE gm.userID = ?
+            WHERE sg.groupID NOT IN (SELECT groupID FROM GROUP_MEMBERS WHERE userID = ?)
         GROUP BY sg.groupID, sg.groupName, sg.groupDesc, groupType, c.courseCode, m.department, cl.clubRepID, u.fname, u.lname`
         db.query(postQuery, [req.params.userID], (err, data) => {
             if (err) return res.status(500).json(err)
@@ -260,6 +408,43 @@ app.listen(8800, () => {
         })
     })
 
+    // getting all groups a user is in
+    app.get("/groups/user/:userID", (req, res) => {
+        //get all groups, and specify where they are to response
+        const postQuery = `SELECT sg.groupID, sg.groupName, sg.groupDesc, COUNT(DISTINCT gm.userID) AS numMembers,
+        CASE
+            WHEN c.groupID IS NOT NULL THEN 'Course'
+            WHEN m.groupID IS NOT NULL THEN 'Major'
+            WHEN cl.groupID IS NOT NULL THEN 'Club'
+        ELSE 'General'
+            END AS groupType, c.courseCode, m.department, cl.clubRepID, u.fname AS repFname, u.lname AS repLname
+        FROM SOCIAL_GROUP sg
+            LEFT JOIN GROUP_MEMBERS gm ON sg.groupID = gm.groupID
+            LEFT JOIN COURSE c ON sg.groupID = c.groupID
+            LEFT JOIN MAJOR m ON sg.groupID = m.groupID
+            LEFT JOIN CLUB cl ON sg.groupID = cl.groupID
+            LEFT JOIN USERS u ON cl.clubRepID = u.userID
+            WHERE sg.groupID IN (SELECT groupID FROM GROUP_MEMBERS WHERE userID = ?)
+        GROUP BY sg.groupID, sg.groupName, sg.groupDesc, groupType, c.courseCode, m.department, cl.clubRepID, u.fname, u.lname`
+        db.query(postQuery, [req.params.userID], (err, data) => {
+            if (err) return res.status(500).json(err)
+            return res.json(data)
+        })
+    })
+
+    // getting all members of a group
+    app.get("/groups/:groupID/members", (req, res) => {
+        const postQuery = `SELECT u.userID, u.fname, u.lname, u.username
+        FROM GROUP_MEMBERS gm
+        JOIN USERS u ON gm.userID = u.userID
+        WHERE gm.groupID = ?`
+        db.query(postQuery, [req.params.groupID], (err, data) => {
+            if (err) return res.status(500).json(err)
+            return res.json(data)
+        })
+    })
+
+    // deleting a group 
      app.delete("/groups/:groupID", (req, res) => {
         const { groupID } = req.params
         console.log("Deleting group:", groupID)

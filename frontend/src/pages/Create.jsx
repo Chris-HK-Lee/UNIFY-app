@@ -102,7 +102,7 @@ const Create = () => {
           </div>
           <div className="form-actions">
             <button type="button" onClick={() => setActive(null)}>Cancel</button>
-            <button type="submit">post</button>
+            <button type="submit">Post</button>
           </div>
         </form>
       )}
