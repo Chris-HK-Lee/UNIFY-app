@@ -269,6 +269,7 @@ const Homepage = () => {
 
       <div className="sidebar">
         <div className="sidebar-user">
+            <p className="sidebar-logo">UNI-FY</p>
           <div>
             <p className="sidebar-name">{user?.fname} {user?.lname}</p>
             <p className="sidebar-acc">@{user?.username}</p>
