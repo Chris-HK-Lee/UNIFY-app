@@ -36,7 +36,7 @@ const ViewPopup = forwardRef((props, ref) => {
                 {viewPopup.members.map(member => (
                 <div className="card" key={member.userID}>
                 <div className="card-left">
-                    <div className="sidebar-name">{member.fname?.[0]} {member.lname?.[0]}</div>
+                    <div className="sidebar-name">{member.fname} {member.lname}</div>
                 </div>
                 <div className="card-right">
                     <span className="card-content">@{member.username}</span>

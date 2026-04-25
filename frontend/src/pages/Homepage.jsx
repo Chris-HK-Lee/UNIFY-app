@@ -166,7 +166,6 @@ const Homepage = () => {
                     <span className="card-sub">{getDetail(group)}</span>
                     <span className="card-content">{group.groupDesc}</span>
                     <div className="card-actions">
-                        <button>Edit</button>
                         <button onClick={() => leaveGroup(user.userID, group.groupID)}>Leave</button>
                     </div>
                     
@@ -280,7 +279,7 @@ const Homepage = () => {
         <nav className="sidebar-nav">
           <button className={activePage === 'home'   ? 'active' : ''} onClick={() => setActivePage('home')}>Home</button>
           <button className={activePage === 'create' ? 'active' : ''} onClick={() => setActivePage('create')}>Create</button>
-          <button className={activePage === 'pages'  ? 'active' : ''} onClick={() => setActivePage('posts')}>Posts</button>
+          <button className={activePage === 'posts'  ? 'active' : ''} onClick={() => setActivePage('posts')}>Posts</button>
           <button className={activePage === 'boards' ? 'active' : ''} onClick={() => setActivePage('boards')}>Boards</button>
           <button className={activePage === 'groups' ? 'active' : ''} onClick={() => setActivePage('groups')}>Groups</button>
           <button className={activePage === 'upage' ? 'active' : ''} onClick={() => setActivePage('upage')}>University Pages</button>
