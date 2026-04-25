@@ -122,7 +122,6 @@ const Homepage = () => {
 
     const UserGroups = ({ userID }) => {
         const [groups, setGroups] = useState([])
-        const [popup, setPopup] = useState({ isOpen: false, groupID: null, groupName: '', members: [] })
         const viewPopupRef = useRef()
 
         useEffect(() => {
