@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef }from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import './Homepage.css'
 import ViewPopup from './viewPopup'
+import ReplyPopup from './replyPopup'
 import Create from './Create'
 import Posts from './Posts'
 import Boards from './Boards'
@@ -29,6 +30,7 @@ const Homepage = () => {
             .then(data => setPosts(data))
             .catch(err => console.error(err))
         }, [userID])
+
 
         if (posts.length === 0) return <p>No posts yet.</p>
 
@@ -67,11 +69,29 @@ const Homepage = () => {
 
     const UserBoards = ({ userID }) => {
         const [boards, setBoards] = useState([])
+        const [replies, setReplies] = useState([])
+        const replyPopupRef = useRef()
 
         useEffect(() => {
             fetch(`http://localhost:8800/boards/user/${userID}`)
             .then(res => res.json())
-            .then(data => setBoards(data))
+            .then(data => {
+                if (!Array.isArray(data)) return
+                setBoards(data)
+
+                // fetch posts for every board at once
+                data.forEach(board => {
+                fetch(`http://localhost:8800/boards/${board.boardID}/posts`)
+                    .then(res => res.json())
+                    .then(posts => {
+                    setReplies(prev => ({
+                        ...prev,
+                        [board.boardID]: Array.isArray(posts) ? posts : []
+                    }))
+                    })
+                    .catch(err => console.error(err))
+                })
+            })
             .catch(err => console.error(err))
         }, [userID])
 
@@ -98,16 +118,25 @@ const Homepage = () => {
             }
         }
 
+        const handlePostCreated = (boardID, newPost) => {
+            setReplies(prev => ({
+            ...prev,
+            [boardID]: [...(prev[boardID] || []), newPost]
+            }))
+        }
+
         return (
+            <>
             <div className="card-list">
             {boards.map(board => (
-                <div className="card" key={board.groupID}>
+                <div className="card-group" key={board.groupID}>
+                    <div className="card">
                 <div className="card-left">
                     <span className="card-sub">{getDetail(board)}</span>
                     <span className="card-content">{board.boardDesc}</span>
                     <div className="card-actions">
                         <button>Edit</button>
-                        <button>Reply</button>
+                        <button onClick={() => replyPopupRef.current.openReply(board)}>Reply</button>
                         <button onClick={() => delBoard(board.boardID)}>Delete</button>
                     </div>
                 </div>
@@ -115,8 +144,28 @@ const Homepage = () => {
                     <span className="card-status">{board.privStatus}</span>
                 </div>
                 </div>
+                {replies[board.boardID]?.length > 0 && (
+                <div className="board-replies">
+                    {replies[board.boardID].map(post => (
+                    <div className="reply-card" key={post.postID}>
+                        <div className="card-left">
+                        <span className="card-sub">@{post.username}</span>
+                        <span className="card-content">{post.postContent}</span>
+                        </div>
+                        <div className="card-right">
+                        <span className="card-status">{post.privStatus}</span>
+                        </div>
+                    </div>
+                    ))}
+                </div>
+                )}
+                </div>
             ))}
             </div>
+
+            <ReplyPopup ref={replyPopupRef} />
+            <ReplyPopup ref={replyPopupRef} onPostCreated={handlePostCreated} />
+            </>
         )
     }
 

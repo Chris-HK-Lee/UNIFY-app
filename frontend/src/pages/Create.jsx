@@ -94,12 +94,6 @@ const Create = () => {
               <option value="private">Private (Friends-Only)</option>
             </select>
           </div>
-          <div className="field">
-            <label>Upload to a board? (optional)</label>
-            <select name="boardID">
-              <option value="">— None —</option>
-            </select>
-          </div>
           <div className="form-actions">
             <button type="button" onClick={() => setActive(null)}>Cancel</button>
             <button type="submit">Post</button>

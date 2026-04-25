@@ -140,7 +140,7 @@ app.listen(8800, () => {
     //creating posts
     app.post("/posts", (req, res) => {
         console.log("Posts hit:", req.body)
-        const { postContent, privStatus, userID, boardID } = req.body
+        const { postContent, privStatus, userID } = req.body
 
         db.query("SELECT COALESCE(MAX(postID), 0) + 1 AS nextID FROM POSTS", (err, rows) => {
             if (err) return res.status(500).json(err)
@@ -148,18 +148,11 @@ app.listen(8800, () => {
 
             const postQuery = "INSERT INTO POSTS (postID, postContent, privStatus, userID) VALUES (?, ?, ?, ?)"
             db.query(postQuery, [postID, postContent, privStatus, userID], (err, result) => {
-            if (err) {
-                console.error("Post insert failed:", err.message)
-                return res.status(500).json(err)
-            }
-
-            if (boardID && boardID !== "") {
-                const uploadQuery = "INSERT INTO UPLOADED (userID, postID, boardID) VALUES (?, ?, ?)"
-                db.query(uploadQuery, [userID, postID, boardID], (err2) => {
-                    if (err2) return res.status(500).json(err2)
-                    return res.json("Post created and uploaded to board")
-                })
-                } else {
+                if (err) {
+                    console.error("Post insert failed:", err.message)
+                    return res.status(500).json(err)
+                }
+                else {
                     return res.json("Post created successfully")
                 }
             })
@@ -263,6 +256,44 @@ app.listen(8800, () => {
         })
     })
 
+    // get all posts for a board
+    app.get("/boards/:boardID/posts", (req, res) => {
+    const q = `
+        SELECT p.postID, p.postContent, p.privStatus, p.userID,
+            u.fname, u.lname, u.username
+        FROM UPLOADED up
+        JOIN POSTS p ON up.postID = p.postID
+        JOIN USERS u ON p.userID = u.userID
+        WHERE up.boardID = ?
+    `
+    db.query(q, [req.params.boardID], (err, data) => {
+        if (err) return res.status(500).json(err)
+        return res.json(data)
+    })
+    })
+
+    // post a reply (post) to a board
+    app.post("/boards/post", (req, res) => {
+    const { postContent, privStatus, userID, boardID } = req.body
+    console.log("Reply post hit:", postContent, privStatus, userID, boardID)
+
+    db.query("SELECT COALESCE(MAX(postID), 0) + 1 AS nextID FROM POSTS", (err, rows) => {
+        if (err) return res.status(500).json(err)
+        const postID = rows[0].nextID
+
+        const postQuery = "INSERT INTO POSTS (postID, postContent, privStatus, userID) VALUES (?, ?, ?, ?)"
+        db.query(postQuery, [postID, postContent, privStatus, userID], (err) => {
+        if (err) return res.status(500).json(err)
+
+        const uploadQuery = "INSERT INTO UPLOADED (userID, postID, boardID) VALUES (?, ?, ?)"
+        db.query(uploadQuery, [userID, postID, boardID], (err) => {
+            if (err) return res.status(500).json(err)
+            return res.json("Post created and uploaded to board")
+        })
+        })
+    })
+    })
+
     //getting a user's posts
     app.get("/posts/user/:userID", (req, res) => {
         const postQuery = "SELECT * FROM POSTS WHERE userID = ?"
@@ -289,12 +320,11 @@ app.listen(8800, () => {
         const { postID } = req.params
         console.log("Deleting post:", postID)
 
-        //delete subtypes first due to foreign key constraints
+        db.query("DELETE FROM UPLOADED WHERE postID = ?", [postID, postID], (err) => {
         db.query("DELETE FROM POSTS WHERE postID = ?", [postID], (err) => {
-            if (err) return res.status(500).json(err)
-            return res.json("Post deleted successfully")
-            
-        })
+                if (err) return res.status(500).json(err)
+                return res.json("Post deleted successfully")
+        })})
     })
 
     // getting a user's own boards
@@ -349,10 +379,26 @@ app.listen(8800, () => {
         db.query("DELETE FROM EVENTBOARD WHERE boardID = ?", [boardID], (err) => {
         db.query("DELETE FROM JOBBOARD WHERE boardID = ?", [boardID], (err) => {
         db.query("DELETE FROM QUESTIONBOARD WHERE boardID = ?", [boardID], (err) => {
+        db.query("SELECT postID FROM UPLOADED WHERE boardID = ?", [boardID], (err, posts) => {
+        console.log("Deleting posts from boards:", posts)
         db.query("DELETE FROM UPLOADED WHERE boardID = ?", [boardID], (err) => {
-        db.query("DELETE FROM BOARDS WHERE boardID = ?", [boardID], (err) => {
             if (err) return res.status(500).json(err)
-            return res.json("Board deleted successfully")
+
+            if (posts.length > 0) {
+              const postIDs = posts.map(p => p.postID)
+              db.query("DELETE FROM POSTS WHERE postID IN (?)", [postIDs], (err) => {
+                if (err) return res.status(500).json(err)
+
+                db.query("DELETE FROM BOARDS WHERE boardID = ?", [boardID], (err) => {
+                  if (err) return res.status(500).json(err)
+                  return res.json("Board deleted successfully")
+                })
+              })
+            } else {
+              db.query("DELETE FROM BOARDS WHERE boardID = ?", [boardID], (err) => {
+                if (err) return res.status(500).json(err)
+                return res.json("Board deleted successfully")
+            })}
         })})})})})
     })
 
