@@ -122,7 +122,6 @@ const Homepage = () => {
 
     const UserGroups = ({ userID }) => {
         const [groups, setGroups] = useState([])
-        const [popup, setPopup] = useState({ isOpen: false, groupID: null, groupName: '', members: [] })
         const viewPopupRef = useRef()
 
         useEffect(() => {
@@ -138,7 +137,7 @@ const Homepage = () => {
         const getDetail = (group) => {
             if (group.groupType === 'Course') return `Course: ${group.courseCode}`
             if (group.groupType === 'Major')  return `Department: ${group.department}`
-            if (group.groupType === 'Club')   return `Club Rep Name: ${group.repFname} ${group.repLname}`
+            if (group.groupType === 'Club')   return `Affiliation: ${group.clubAff}`
             return 'General Group'
         }
 
