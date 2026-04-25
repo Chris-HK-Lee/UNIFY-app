@@ -137,7 +137,7 @@ const Homepage = () => {
         const getDetail = (group) => {
             if (group.groupType === 'Course') return `Course: ${group.courseCode}`
             if (group.groupType === 'Major')  return `Department: ${group.department}`
-            if (group.groupType === 'Club')   return `Club Rep Name: ${group.repFname} ${group.repLname}`
+            if (group.groupType === 'Club')   return `Affiliation: ${group.clubAff}`
             return 'General Group'
         }
 

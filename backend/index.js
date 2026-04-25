@@ -169,7 +169,7 @@ app.listen(8800, () => {
     //creating groups
     app.post("/social_group", (req, res) => {
         console.log("Groups hit:", req.body)
-        const { choice, groupName, groupDesc, courseCode, department, clubRepID, userID } = req.body
+        const { choice, groupName, groupDesc, courseCode, department, clubAff, userID } = req.body
 
         db.query("SELECT COALESCE(MAX(groupID), 0) + 1 AS nextID FROM SOCIAL_GROUP", (err, rows) => {
             if (err) return res.status(500).json(err)
@@ -187,23 +187,23 @@ app.listen(8800, () => {
                 })
             }
 
-            if (choice === 'Course') {
+            if (choice === 'course') {
                 const q = "INSERT INTO COURSE (groupID, courseCode, userID) VALUES (?, ?, ?)"
                 db.query(q, [groupID, courseCode, userID], (err) => {
                 if (err) return res.status(500).json(err)
                 addMemberAndRespond("Course group created successfully")
                 })
 
-            } else if (choice === 'Major') {
+            } else if (choice === 'major') {
                 const q = "INSERT INTO MAJOR (groupID, department, userID) VALUES (?, ?, ?)"
                 db.query(q, [groupID, department, userID], (err) => {
                 if (err) return res.status(500).json(err)
                 addMemberAndRespond("Major group created successfully")
                 })
 
-            } else if (choice === 'Club') {
-                const q = "INSERT INTO CLUB (groupID, clubRepID, userID) VALUES (?, ?, ?)"
-                db.query(q, [groupID, clubRepID, userID], (err) => {
+            } else if (choice === 'club') {
+                const q = "INSERT INTO CLUB (groupID, userID, clubAff) VALUES (?, ?, ?)"
+                db.query(q, [groupID, userID, clubAff], (err) => {
                 if (err) return res.status(500).json(err)
                 addMemberAndRespond("Club group created successfully")
                 })
@@ -393,15 +393,14 @@ app.listen(8800, () => {
             WHEN m.groupID IS NOT NULL THEN 'Major'
             WHEN cl.groupID IS NOT NULL THEN 'Club'
         ELSE 'General'
-            END AS groupType, c.courseCode, m.department, cl.clubRepID, u.fname AS repFname, u.lname AS repLname
+            END AS groupType, c.courseCode, m.department, cl.clubAff
         FROM SOCIAL_GROUP sg
             LEFT JOIN GROUP_MEMBERS gm ON sg.groupID = gm.groupID
             LEFT JOIN COURSE c ON sg.groupID = c.groupID
             LEFT JOIN MAJOR m ON sg.groupID = m.groupID
             LEFT JOIN CLUB cl ON sg.groupID = cl.groupID
-            LEFT JOIN USERS u ON cl.clubRepID = u.userID
             WHERE sg.groupID NOT IN (SELECT groupID FROM GROUP_MEMBERS WHERE userID = ?)
-        GROUP BY sg.groupID, sg.groupName, sg.groupDesc, groupType, c.courseCode, m.department, cl.clubRepID, u.fname, u.lname`
+        GROUP BY sg.groupID, sg.groupName, sg.groupDesc, groupType, c.courseCode, m.department, cl.clubAff`
         db.query(postQuery, [req.params.userID], (err, data) => {
             if (err) return res.status(500).json(err)
             return res.json(data)
@@ -417,15 +416,14 @@ app.listen(8800, () => {
             WHEN m.groupID IS NOT NULL THEN 'Major'
             WHEN cl.groupID IS NOT NULL THEN 'Club'
         ELSE 'General'
-            END AS groupType, c.courseCode, m.department, cl.clubRepID, u.fname AS repFname, u.lname AS repLname
+            END AS groupType, c.courseCode, m.department, cl.clubAff
         FROM SOCIAL_GROUP sg
             LEFT JOIN GROUP_MEMBERS gm ON sg.groupID = gm.groupID
             LEFT JOIN COURSE c ON sg.groupID = c.groupID
             LEFT JOIN MAJOR m ON sg.groupID = m.groupID
             LEFT JOIN CLUB cl ON sg.groupID = cl.groupID
-            LEFT JOIN USERS u ON cl.clubRepID = u.userID
             WHERE sg.groupID IN (SELECT groupID FROM GROUP_MEMBERS WHERE userID = ?)
-        GROUP BY sg.groupID, sg.groupName, sg.groupDesc, groupType, c.courseCode, m.department, cl.clubRepID, u.fname, u.lname`
+        GROUP BY sg.groupID, sg.groupName, sg.groupDesc, groupType, c.courseCode, m.department, cl.clubAff`
         db.query(postQuery, [req.params.userID], (err, data) => {
             if (err) return res.status(500).json(err)
             return res.json(data)
