@@ -55,6 +55,9 @@ const Boards = () => {
 
         return (
         <>
+        <div className="main-content">
+                <h2>Explore Boards</h2>
+        </div>
         <div className="card-list">
             {boards.map(board => (
             <div className="card-group" key={board.boardID}>

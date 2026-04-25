@@ -264,8 +264,8 @@ app.listen(8800, () => {
         FROM UPLOADED up
         JOIN POSTS p ON up.postID = p.postID
         JOIN USERS u ON p.userID = u.userID
-        WHERE up.boardID = ?
-    `
+        WHERE up.boardID = ? 
+        ORDER BY p.postID DESC`
     db.query(q, [req.params.boardID], (err, data) => {
         if (err) return res.status(500).json(err)
         return res.json(data)
@@ -296,7 +296,7 @@ app.listen(8800, () => {
 
     //getting a user's posts
     app.get("/posts/user/:userID", (req, res) => {
-        const postQuery = "SELECT * FROM POSTS WHERE userID = ?"
+        const postQuery = "SELECT * FROM POSTS p WHERE userID = ? ORDER BY p.postID DESC"
         db.query(postQuery, [req.params.userID], (err, data) => {
             if (err) return res.status(500).json(err)
             return res.json(data)
@@ -308,8 +308,25 @@ app.listen(8800, () => {
         // make sure to show posts that does not belong to user from req, and are public only
         const postQuery = `SELECT p.postID, p.userID, p.postContent, p.privStatus, u.username, u.userID 
         FROM POSTS p LEFT JOIN USERS u ON u.userID = p.userID 
-        WHERE NOT p.userID = ? AND p.privStatus = 'public'`
+        WHERE NOT p.userID = ? AND p.privStatus = 'public'
+        ORDER BY p.postID DESC`
         db.query(postQuery, [req.params.userID], (err, data) => {
+            if (err) return res.status(500).json(err)
+            return res.json(data)
+        })
+    })
+
+    //getting friends posts that are different from a user's own
+    app.get("/fPosts/user/:userID", (req, res) => {
+        // make sure to show posts that does not belong to user from req, and are public only
+        const postQuery = `SELECT p.postID, p.userID, p.postContent, p.privStatus, u.username, u.userID 
+        FROM POSTS p LEFT JOIN USERS u ON u.userID = p.userID 
+        WHERE NOT p.userID = ? AND p.userID IN (SELECT CASE
+            WHEN f.friendID = ? THEN f.friendeeID
+            ELSE f.friendID
+        END FROM FRIEND f WHERE f.friendID = ? OR f.friendeeID = ?)
+        ORDER BY p.postID DESC`
+        db.query(postQuery, [req.params.userID, req.params.userID, req.params.userID, req.params.userID], (err, data) => {
             if (err) return res.status(500).json(err)
             return res.json(data)
         })
@@ -341,7 +358,8 @@ app.listen(8800, () => {
             LEFT JOIN EVENTBOARD e ON e.boardID = b.boardID
             LEFT JOIN JOBBOARD j ON j.boardID = b.boardID
             LEFT JOIN QUESTIONBOARD q ON q.boardID = b.boardID
-            WHERE b.userID = ?`
+            WHERE b.userID = ?
+            ORDER BY b.boardID DESC`
         db.query(postQuery, [req.params.userID], (err, data) => {
             if (err) return res.status(500).json(err)
             return res.json(data)
@@ -363,8 +381,36 @@ app.listen(8800, () => {
         LEFT JOIN JOBBOARD j ON j.boardID = b.boardID
         LEFT JOIN QUESTIONBOARD q ON q.boardID = b.boardID 
         LEFT JOIN USERS u ON u.userID = b.userID 
-        WHERE NOT b.userID = ? AND b.privStatus = 'public'`
+        WHERE NOT b.userID = ? AND b.privStatus = 'public'
+        ORDER BY b.boardID DESC`
         db.query(postQuery, [req.params.userID], (err, data) => {
+            if (err) return res.status(500).json(err)
+            return res.json(data)
+        })
+    })
+
+    //getting all friends boards and is not the user's own
+    app.get("/fBoards/user/:userID", (req, res) => {
+        // make sure to show boards that does not belong to user from req, and are public only
+        const postQuery = `SELECT b.boardID, b.userID, b.boardDesc, b.privStatus, u.username, u.userID,
+        CASE
+            WHEN e.boardID IS NOT NULL THEN 'Event'
+            WHEN j.boardID IS NOT NULL THEN 'Job'
+            WHEN q.boardID IS NOT NULL THEN 'Question'
+        ELSE 'General' 
+        END AS boardType, e.eventTime, e.eventLoc, q.category, j.jobfield, j.employerName, j.appDeadline
+        FROM BOARDS b
+        LEFT JOIN EVENTBOARD e ON e.boardID = b.boardID
+        LEFT JOIN JOBBOARD j ON j.boardID = b.boardID
+        LEFT JOIN QUESTIONBOARD q ON q.boardID = b.boardID 
+        LEFT JOIN USERS u ON u.userID = b.userID 
+        WHERE NOT b.userID = ? 
+        AND b.userID IN (SELECT CASE
+            WHEN f.friendID = ? THEN f.friendeeID
+            ELSE f.friendID
+        END FROM FRIEND f WHERE f.friendID = ? OR f.friendeeID = ?)
+        ORDER BY b.boardID DESC`
+        db.query(postQuery, [req.params.userID, req.params.userID, req.params.userID, req.params.userID], (err, data) => {
             if (err) return res.status(500).json(err)
             return res.json(data)
         })
@@ -446,8 +492,38 @@ app.listen(8800, () => {
             LEFT JOIN MAJOR m ON sg.groupID = m.groupID
             LEFT JOIN CLUB cl ON sg.groupID = cl.groupID
             WHERE sg.groupID NOT IN (SELECT groupID FROM GROUP_MEMBERS WHERE userID = ?)
-        GROUP BY sg.groupID, sg.groupName, sg.groupDesc, groupType, c.courseCode, m.department, cl.clubAff`
+        GROUP BY sg.groupID, sg.groupName, sg.groupDesc, groupType, c.courseCode, m.department, cl.clubAff
+        ORDER BY sg.groupID DESC`
         db.query(postQuery, [req.params.userID], (err, data) => {
+            if (err) return res.status(500).json(err)
+            return res.json(data)
+        })
+    })
+
+    //get all groups of a user's friends and that a user is not in
+    app.get("/fGroups/user/:userID", (req, res) => {
+        //get all groups, and specify where they are to response
+        const postQuery = `SELECT sg.groupID, sg.groupName, sg.groupDesc, COUNT(DISTINCT gm.userID) AS numMembers,
+        CASE
+            WHEN c.groupID IS NOT NULL THEN 'Course'
+            WHEN m.groupID IS NOT NULL THEN 'Major'
+            WHEN cl.groupID IS NOT NULL THEN 'Club'
+        ELSE 'General'
+            END AS groupType, c.courseCode, m.department, cl.clubAff
+        FROM SOCIAL_GROUP sg
+            LEFT JOIN GROUP_MEMBERS gm ON sg.groupID = gm.groupID
+            LEFT JOIN COURSE c ON sg.groupID = c.groupID
+            LEFT JOIN MAJOR m ON sg.groupID = m.groupID
+            LEFT JOIN CLUB cl ON sg.groupID = cl.groupID
+            WHERE sg.groupID NOT IN (SELECT groupID FROM GROUP_MEMBERS WHERE userID = ?)
+            AND sg.groupID IN (SELECT gm2.groupID FROM GROUP_MEMBERS gm2
+            WHERE gm2.userID IN (SELECT CASE
+                WHEN f.friendID = ? THEN f.friendeeID
+                ELSE f.friendID
+            END FROM FRIEND f WHERE f.friendID = ? OR f.friendeeID = ?))
+        GROUP BY sg.groupID, sg.groupName, sg.groupDesc, groupType, c.courseCode, m.department, cl.clubAff
+        ORDER BY sg.groupID DESC`
+        db.query(postQuery, [req.params.userID, req.params.userID, req.params.userID, req.params.userID], (err, data) => {
             if (err) return res.status(500).json(err)
             return res.json(data)
         })
@@ -469,7 +545,8 @@ app.listen(8800, () => {
             LEFT JOIN MAJOR m ON sg.groupID = m.groupID
             LEFT JOIN CLUB cl ON sg.groupID = cl.groupID
             WHERE sg.groupID IN (SELECT groupID FROM GROUP_MEMBERS WHERE userID = ?)
-        GROUP BY sg.groupID, sg.groupName, sg.groupDesc, groupType, c.courseCode, m.department, cl.clubAff`
+        GROUP BY sg.groupID, sg.groupName, sg.groupDesc, groupType, c.courseCode, m.department, cl.clubAff
+        ORDER BY sg.groupID DESC`
         db.query(postQuery, [req.params.userID], (err, data) => {
             if (err) return res.status(500).json(err)
             return res.json(data)
