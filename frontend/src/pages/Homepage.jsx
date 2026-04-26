@@ -151,17 +151,26 @@ const Homepage = () => {
             }))
         }
 
+        const handlePostCreated = (boardID, newPost) => {
+            setReplies(prev => ({
+            ...prev,
+            [boardID]: [...(prev[boardID] || []), newPost]
+            }))
+        }
+
         return (
             <>
             <div className="card-list">
             {boards.map(board => (
-                <div className="card-group" key={board.boardID}>
+<<<<<<<<< Temporary merge branch 1
+                <div className="card-group" key={board.groupID}>
                     <div className="card">
                 <div className="card-left">
                     <span className="card-sub">{getDetail(board)}</span>
                     <span className="card-content">{board.boardDesc}</span>
                     <div className="card-actions">
-                        <button onClick={() => openEdit(board)}>Edit</button>
+<<<<<<<<< Temporary merge branch 1
+                        <button>Edit</button>
                         <button onClick={() => replyPopupRef.current.openReply(board)}>Reply</button>
                         <button onClick={() => delBoard(board.boardID)}>Delete</button>
                     </div>
