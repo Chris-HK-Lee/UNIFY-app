@@ -1,80 +1,111 @@
-### Download The Project
-We have download available via our github link or the zip file submitted in the D2L dropbox. Ensure that the project files for UNIFY-app contain the following prior to running:
+# UNIFY App — Setup & User Guide
+
+---
+
+## Getting Started
+
+### Prerequisites
+
+Download the project via the GitHub link or the zip file from the D2L dropbox. Before running, confirm the following files are present:
+
 ```
-path/to/UNIFY-app % ls 
-backend			README.md
-frontend		unify_table_dec.sql
+path/to/UNIFY-app/
+├── backend/
+├── frontend/
+├── README.md
+└── unify_table_dec.sql
+```
 
-### Running the project
+---
 
-open MySQL
-    - file -> open SQL script -> select unify_table_dec.sql
-    - this will create the database
+## Setup
 
-****IMPORTANT***** path/to/UNIFY-app/backend/index.js change the password to your own MySQL password
+### 1. Database
 
+1. Open MySQL Workbench
+2. Go to **File → Open SQL Script** and select `unify_table_dec.sql`
+3. Run the script — this will create the database
 
-The following is for running the project's **backend**:
-    - path/to/UNIFY-app/backend % node index.js
-    - Backend server is running!
+### 2. Backend Configuration
 
+>  **Important:** Open `path/to/UNIFY-app/backend/index.js` and update the password field to your own MySQL password before running. The following code block is lines 11-17.
+```
+    // change to your password and db name
+    const db = mysql.createConnection({
+        host: "localhost",
+        user: "root",
+        password: "",
+        database: "unify"
+    })
+```
 
-The following is for running the project's **frontend**:
-    - path/to/UNIFY-app/frontend % npm start
-    - you will get the local host link after running the application
+### 3. Running the Backend
 
-Functionalities
+```bash
+cd path/to/UNIFY-app/backend
+node index.js
+# Backend server is running!
+```
 
-Log in:
-    - Click on the register button and select user type
-    - Enter user information and create account
-    - Click on the login button select user type and enter credentials and login
+### 4. Running the Frontend
 
-admin login:
-    - for security reasons admin cannot register on the login screen
-    - We did not implement how we are going to handle new admin creation (other than inserting directly into database)
-    - We created a admin account for the TA to use
-    - Select admin button on login screen and enter the credentials below
-        - Admin account:
-            - email: admin@admin.com
-            - password: admin
+```bash
+cd path/to/UNIFY-app/frontend
+npm start
+# A localhost link will appear once the app is running
+```
 
-Homepage
-    - user can view all their activities and friends on the homepage
-    - My posts: view all of user's post
-    - My Boards: view all of user's boards
-    - My Groups: view all of user's groups
-    - My friends: View all of user's friends
+---
 
-Create
-    - Create Post: Write a new post and select visibility then post
-    - Create Board: Select Board type (question, event, job board), write message, set visibility then make board
-    - Create Group: select group type (course, major, club), name group, write message, set visibility then make     group
+## Functionalities
 
-Friend Activity
-    - Their posts: view posts of all friends
-    - Their boards: view boards of all friends
-    - Their groups: view groups of all friends
+### Authentication
 
-Posts
-    - User can view all of the public posts 
+| Action | Steps |
+|---|---|
+| **Register** | Click **Register** → select user type → enter info → create account |
+| **Login** | Click **Login** → select user type → enter credentials |
+| **Admin Login** | Click **Admin** on login screen → enter admin credentials (see below) |
 
-Boards
-    - User can view all of the public boards
+> **Note:** Admins cannot self-register from the login screen. New admin creation (outside of direct database insertion) was not implemented. A pre-made admin account is available for testing:
+> - **Email:** `admin@admin.com`
+> - **Password:** `admin`
 
-Groups
-    - User can view all of the public groups
+---
 
-University Pages
-    - User can view all of the approved university pages
+### User Features
 
-Company Page
-    - User can view all of the approved business pages 
+#### Homepage
+View a summary of your activity:
+- **My Posts** — all posts you've created
+- **My Boards** — all boards you've created
+- **My Groups** — all groups you've created
+- **My Friends** — your full friends list
 
+#### Create
+- **Post** — write a post and set visibility
+- **Board** — select board type (Question, Event, Job Board), write a message, set visibility
+- **Group** — select group type (Course, Major, Club), name the group, write a message, set visibility
 
-**ADMIN ONLY** 
-Page Approvals
-    - Admin can view all of the pending pages for review and can approve or remove them
+#### Friend Activity
+- **Their Posts** — posts from all your friends
+- **Their Boards** — boards from all your friends
+- **Their Groups** — groups from all your friends
 
-Manage Users
-    - Admin can view all users and remove them
+#### Browse (Public Content)
+- **Posts** — view all public posts
+- **Boards** — view all public boards
+- **Groups** — view all public groups
+- **University Pages** — view all approved university pages
+- **Company Pages** — view all approved business pages
+
+---
+
+### Admin Features
+
+> Access requires the admin account credentials above.
+
+| Feature | Description |
+|---|---|
+| **Page Approvals** | Review pending university/company pages and approve or remove them |
+| **Manage Users** | View all registered users and remove accounts if needed |
