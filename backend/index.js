@@ -140,7 +140,7 @@ app.listen(8800, () => {
     //creating posts
     app.post("/posts", (req, res) => {
         console.log("Posts hit:", req.body)
-        const { postContent, privStatus, userID, boardID } = req.body
+        const { postContent, privStatus, userID } = req.body
 
         db.query("SELECT COALESCE(MAX(postID), 0) + 1 AS nextID FROM POSTS", (err, rows) => {
             if (err) return res.status(500).json(err)
@@ -148,18 +148,11 @@ app.listen(8800, () => {
 
             const postQuery = "INSERT INTO POSTS (postID, postContent, privStatus, userID) VALUES (?, ?, ?, ?)"
             db.query(postQuery, [postID, postContent, privStatus, userID], (err, result) => {
-            if (err) {
-                console.error("Post insert failed:", err.message)
-                return res.status(500).json(err)
-            }
-
-            if (boardID && boardID !== "") {
-                const uploadQuery = "INSERT INTO UPLOADED (userID, postID, boardID) VALUES (?, ?, ?)"
-                db.query(uploadQuery, [userID, postID, boardID], (err2) => {
-                    if (err2) return res.status(500).json(err2)
-                    return res.json("Post created and uploaded to board")
-                })
-                } else {
+                if (err) {
+                    console.error("Post insert failed:", err.message)
+                    return res.status(500).json(err)
+                }
+                else {
                     return res.json("Post created successfully")
                 }
             })
@@ -169,7 +162,7 @@ app.listen(8800, () => {
     //creating groups
     app.post("/social_group", (req, res) => {
         console.log("Groups hit:", req.body)
-        const { choice, groupName, groupDesc, courseCode, department, clubRepID, userID } = req.body
+        const { choice, groupName, groupDesc, courseCode, department, clubAff, userID } = req.body
 
         db.query("SELECT COALESCE(MAX(groupID), 0) + 1 AS nextID FROM SOCIAL_GROUP", (err, rows) => {
             if (err) return res.status(500).json(err)
@@ -187,23 +180,23 @@ app.listen(8800, () => {
                 })
             }
 
-            if (choice === 'Course') {
+            if (choice === 'course') {
                 const q = "INSERT INTO COURSE (groupID, courseCode, userID) VALUES (?, ?, ?)"
                 db.query(q, [groupID, courseCode, userID], (err) => {
                 if (err) return res.status(500).json(err)
                 addMemberAndRespond("Course group created successfully")
                 })
 
-            } else if (choice === 'Major') {
+            } else if (choice === 'major') {
                 const q = "INSERT INTO MAJOR (groupID, department, userID) VALUES (?, ?, ?)"
                 db.query(q, [groupID, department, userID], (err) => {
                 if (err) return res.status(500).json(err)
                 addMemberAndRespond("Major group created successfully")
                 })
 
-            } else if (choice === 'Club') {
-                const q = "INSERT INTO CLUB (groupID, clubRepID, userID) VALUES (?, ?, ?)"
-                db.query(q, [groupID, clubRepID, userID], (err) => {
+            } else if (choice === 'club') {
+                const q = "INSERT INTO CLUB (groupID, userID, clubAff) VALUES (?, ?, ?)"
+                db.query(q, [groupID, userID, clubAff], (err) => {
                 if (err) return res.status(500).json(err)
                 addMemberAndRespond("Club group created successfully")
                 })
@@ -263,9 +256,47 @@ app.listen(8800, () => {
         })
     })
 
+    // get all posts for a board
+    app.get("/boards/:boardID/posts", (req, res) => {
+    const q = `
+        SELECT p.postID, p.postContent, p.privStatus, p.userID,
+            u.fname, u.lname, u.username
+        FROM UPLOADED up
+        JOIN POSTS p ON up.postID = p.postID
+        JOIN USERS u ON p.userID = u.userID
+        WHERE up.boardID = ? 
+        ORDER BY p.postID DESC`
+    db.query(q, [req.params.boardID], (err, data) => {
+        if (err) return res.status(500).json(err)
+        return res.json(data)
+    })
+    })
+
+    // post a reply (post) to a board
+    app.post("/boards/post", (req, res) => {
+    const { postContent, privStatus, userID, boardID } = req.body
+    console.log("Reply post hit:", postContent, privStatus, userID, boardID)
+
+    db.query("SELECT COALESCE(MAX(postID), 0) + 1 AS nextID FROM POSTS", (err, rows) => {
+        if (err) return res.status(500).json(err)
+        const postID = rows[0].nextID
+
+        const postQuery = "INSERT INTO POSTS (postID, postContent, privStatus, userID) VALUES (?, ?, ?, ?)"
+        db.query(postQuery, [postID, postContent, privStatus, userID], (err) => {
+        if (err) return res.status(500).json(err)
+
+        const uploadQuery = "INSERT INTO UPLOADED (userID, postID, boardID) VALUES (?, ?, ?)"
+        db.query(uploadQuery, [userID, postID, boardID], (err) => {
+            if (err) return res.status(500).json(err)
+            return res.json("Post created and uploaded to board")
+        })
+        })
+    })
+    })
+
     //getting a user's posts
     app.get("/posts/user/:userID", (req, res) => {
-        const postQuery = "SELECT * FROM POSTS WHERE userID = ?"
+        const postQuery = "SELECT * FROM POSTS p WHERE userID = ? ORDER BY p.postID DESC"
         db.query(postQuery, [req.params.userID], (err, data) => {
             if (err) return res.status(500).json(err)
             return res.json(data)
@@ -277,20 +308,27 @@ app.listen(8800, () => {
         // make sure to show posts that does not belong to user from req, and are public only
         const postQuery = `SELECT p.postID, p.userID, p.postContent, p.privStatus, u.username, u.userID 
         FROM POSTS p LEFT JOIN USERS u ON u.userID = p.userID 
-        WHERE NOT p.userID = ? AND p.privStatus = 'public'`
+        WHERE NOT p.userID = ? AND p.privStatus = 'public'
+        ORDER BY p.postID DESC`
         db.query(postQuery, [req.params.userID], (err, data) => {
             if (err) return res.status(500).json(err)
             return res.json(data)
         })
     })
 
-    // editing a user's own post
-    app.put("/posts/:postID", (req, res) => {
-        const { postContent, privStatus } = req.body
-        db.query("UPDATE POSTS SET postContent = ?, privStatus = ? WHERE postID = ?",
-            [postContent, privStatus, req.params.postID], (err) => {
-            if (err) return res.status(500).json(err.sqlMessage || err)
-            return res.json("Post updated successfully")
+    //getting friends posts that are different from a user's own
+    app.get("/fPosts/user/:userID", (req, res) => {
+        // make sure to show posts that does not belong to user from req, and are public only
+        const postQuery = `SELECT p.postID, p.userID, p.postContent, p.privStatus, u.username, u.userID 
+        FROM POSTS p LEFT JOIN USERS u ON u.userID = p.userID 
+        WHERE NOT p.userID = ? AND p.userID IN (SELECT CASE
+            WHEN f.friendID = ? THEN f.friendeeID
+            ELSE f.friendID
+        END FROM FRIEND f WHERE f.friendID = ? OR f.friendeeID = ?)
+        ORDER BY p.postID DESC`
+        db.query(postQuery, [req.params.userID, req.params.userID, req.params.userID, req.params.userID], (err, data) => {
+            if (err) return res.status(500).json(err)
+            return res.json(data)
         })
     })
 
@@ -299,12 +337,11 @@ app.listen(8800, () => {
         const { postID } = req.params
         console.log("Deleting post:", postID)
 
-        //delete subtypes first due to foreign key constraints
+        db.query("DELETE FROM UPLOADED WHERE postID = ?", [postID, postID], (err) => {
         db.query("DELETE FROM POSTS WHERE postID = ?", [postID], (err) => {
-            if (err) return res.status(500).json(err)
-            return res.json("Post deleted successfully")
-            
-        })
+                if (err) return res.status(500).json(err)
+                return res.json("Post deleted successfully")
+        })})
     })
 
     // getting a user's own boards
@@ -321,7 +358,8 @@ app.listen(8800, () => {
             LEFT JOIN EVENTBOARD e ON e.boardID = b.boardID
             LEFT JOIN JOBBOARD j ON j.boardID = b.boardID
             LEFT JOIN QUESTIONBOARD q ON q.boardID = b.boardID
-            WHERE b.userID = ?`
+            WHERE b.userID = ?
+            ORDER BY b.boardID DESC`
         db.query(postQuery, [req.params.userID], (err, data) => {
             if (err) return res.status(500).json(err)
             return res.json(data)
@@ -343,20 +381,38 @@ app.listen(8800, () => {
         LEFT JOIN JOBBOARD j ON j.boardID = b.boardID
         LEFT JOIN QUESTIONBOARD q ON q.boardID = b.boardID 
         LEFT JOIN USERS u ON u.userID = b.userID 
-        WHERE NOT b.userID = ? AND b.privStatus = 'public'`
+        WHERE NOT b.userID = ? AND b.privStatus = 'public'
+        ORDER BY b.boardID DESC`
         db.query(postQuery, [req.params.userID], (err, data) => {
             if (err) return res.status(500).json(err)
             return res.json(data)
         })
     })
 
-    // editing a user's own board (description and privacy only — type-specific fields are fixed)
-    app.put("/boards/:boardID", (req, res) => {
-        const { boardDesc, privStatus } = req.body
-        db.query("UPDATE BOARDS SET boardDesc = ?, privStatus = ? WHERE boardID = ?",
-            [boardDesc, privStatus, req.params.boardID], (err) => {
-            if (err) return res.status(500).json(err.sqlMessage || err)
-            return res.json("Board updated successfully")
+    //getting all friends boards and is not the user's own
+    app.get("/fBoards/user/:userID", (req, res) => {
+        // make sure to show boards that does not belong to user from req, and are public only
+        const postQuery = `SELECT b.boardID, b.userID, b.boardDesc, b.privStatus, u.username, u.userID,
+        CASE
+            WHEN e.boardID IS NOT NULL THEN 'Event'
+            WHEN j.boardID IS NOT NULL THEN 'Job'
+            WHEN q.boardID IS NOT NULL THEN 'Question'
+        ELSE 'General' 
+        END AS boardType, e.eventTime, e.eventLoc, q.category, j.jobfield, j.employerName, j.appDeadline
+        FROM BOARDS b
+        LEFT JOIN EVENTBOARD e ON e.boardID = b.boardID
+        LEFT JOIN JOBBOARD j ON j.boardID = b.boardID
+        LEFT JOIN QUESTIONBOARD q ON q.boardID = b.boardID 
+        LEFT JOIN USERS u ON u.userID = b.userID 
+        WHERE NOT b.userID = ? 
+        AND b.userID IN (SELECT CASE
+            WHEN f.friendID = ? THEN f.friendeeID
+            ELSE f.friendID
+        END FROM FRIEND f WHERE f.friendID = ? OR f.friendeeID = ?)
+        ORDER BY b.boardID DESC`
+        db.query(postQuery, [req.params.userID, req.params.userID, req.params.userID, req.params.userID], (err, data) => {
+            if (err) return res.status(500).json(err)
+            return res.json(data)
         })
     })
 
@@ -369,10 +425,26 @@ app.listen(8800, () => {
         db.query("DELETE FROM EVENTBOARD WHERE boardID = ?", [boardID], (err) => {
         db.query("DELETE FROM JOBBOARD WHERE boardID = ?", [boardID], (err) => {
         db.query("DELETE FROM QUESTIONBOARD WHERE boardID = ?", [boardID], (err) => {
+        db.query("SELECT postID FROM UPLOADED WHERE boardID = ?", [boardID], (err, posts) => {
+        console.log("Deleting posts from boards:", posts)
         db.query("DELETE FROM UPLOADED WHERE boardID = ?", [boardID], (err) => {
-        db.query("DELETE FROM BOARDS WHERE boardID = ?", [boardID], (err) => {
             if (err) return res.status(500).json(err)
-            return res.json("Board deleted successfully")
+
+            if (posts.length > 0) {
+              const postIDs = posts.map(p => p.postID)
+              db.query("DELETE FROM POSTS WHERE postID IN (?)", [postIDs], (err) => {
+                if (err) return res.status(500).json(err)
+
+                db.query("DELETE FROM BOARDS WHERE boardID = ?", [boardID], (err) => {
+                  if (err) return res.status(500).json(err)
+                  return res.json("Board deleted successfully")
+                })
+              })
+            } else {
+              db.query("DELETE FROM BOARDS WHERE boardID = ?", [boardID], (err) => {
+                if (err) return res.status(500).json(err)
+                return res.json("Board deleted successfully")
+            })}
         })})})})})
     })
 
@@ -423,16 +495,45 @@ app.listen(8800, () => {
             WHEN m.groupID IS NOT NULL THEN 'Major'
             WHEN cl.groupID IS NOT NULL THEN 'Club'
         ELSE 'General'
-            END AS groupType, c.courseCode, m.department, cl.clubRepID, u.fname AS repFname, u.lname AS repLname
+            END AS groupType, c.courseCode, m.department, cl.clubAff
         FROM SOCIAL_GROUP sg
             LEFT JOIN GROUP_MEMBERS gm ON sg.groupID = gm.groupID
             LEFT JOIN COURSE c ON sg.groupID = c.groupID
             LEFT JOIN MAJOR m ON sg.groupID = m.groupID
             LEFT JOIN CLUB cl ON sg.groupID = cl.groupID
-            LEFT JOIN USERS u ON cl.clubRepID = u.userID
             WHERE sg.groupID NOT IN (SELECT groupID FROM GROUP_MEMBERS WHERE userID = ?)
-        GROUP BY sg.groupID, sg.groupName, sg.groupDesc, groupType, c.courseCode, m.department, cl.clubRepID, u.fname, u.lname`
+        GROUP BY sg.groupID, sg.groupName, sg.groupDesc, groupType, c.courseCode, m.department, cl.clubAff
+        ORDER BY sg.groupID DESC`
         db.query(postQuery, [req.params.userID], (err, data) => {
+            if (err) return res.status(500).json(err)
+            return res.json(data)
+        })
+    })
+
+    //get all groups of a user's friends and that a user is not in
+    app.get("/fGroups/user/:userID", (req, res) => {
+        //get all groups, and specify where they are to response
+        const postQuery = `SELECT sg.groupID, sg.groupName, sg.groupDesc, COUNT(DISTINCT gm.userID) AS numMembers,
+        CASE
+            WHEN c.groupID IS NOT NULL THEN 'Course'
+            WHEN m.groupID IS NOT NULL THEN 'Major'
+            WHEN cl.groupID IS NOT NULL THEN 'Club'
+        ELSE 'General'
+            END AS groupType, c.courseCode, m.department, cl.clubAff
+        FROM SOCIAL_GROUP sg
+            LEFT JOIN GROUP_MEMBERS gm ON sg.groupID = gm.groupID
+            LEFT JOIN COURSE c ON sg.groupID = c.groupID
+            LEFT JOIN MAJOR m ON sg.groupID = m.groupID
+            LEFT JOIN CLUB cl ON sg.groupID = cl.groupID
+            WHERE sg.groupID NOT IN (SELECT groupID FROM GROUP_MEMBERS WHERE userID = ?)
+            AND sg.groupID IN (SELECT gm2.groupID FROM GROUP_MEMBERS gm2
+            WHERE gm2.userID IN (SELECT CASE
+                WHEN f.friendID = ? THEN f.friendeeID
+                ELSE f.friendID
+            END FROM FRIEND f WHERE f.friendID = ? OR f.friendeeID = ?))
+        GROUP BY sg.groupID, sg.groupName, sg.groupDesc, groupType, c.courseCode, m.department, cl.clubAff
+        ORDER BY sg.groupID DESC`
+        db.query(postQuery, [req.params.userID, req.params.userID, req.params.userID, req.params.userID], (err, data) => {
             if (err) return res.status(500).json(err)
             return res.json(data)
         })
@@ -447,15 +548,15 @@ app.listen(8800, () => {
             WHEN m.groupID IS NOT NULL THEN 'Major'
             WHEN cl.groupID IS NOT NULL THEN 'Club'
         ELSE 'General'
-            END AS groupType, c.courseCode, m.department, cl.clubRepID, u.fname AS repFname, u.lname AS repLname
+            END AS groupType, c.courseCode, m.department, cl.clubAff
         FROM SOCIAL_GROUP sg
             LEFT JOIN GROUP_MEMBERS gm ON sg.groupID = gm.groupID
             LEFT JOIN COURSE c ON sg.groupID = c.groupID
             LEFT JOIN MAJOR m ON sg.groupID = m.groupID
             LEFT JOIN CLUB cl ON sg.groupID = cl.groupID
-            LEFT JOIN USERS u ON cl.clubRepID = u.userID
             WHERE sg.groupID IN (SELECT groupID FROM GROUP_MEMBERS WHERE userID = ?)
-        GROUP BY sg.groupID, sg.groupName, sg.groupDesc, groupType, c.courseCode, m.department, cl.clubRepID, u.fname, u.lname`
+        GROUP BY sg.groupID, sg.groupName, sg.groupDesc, groupType, c.courseCode, m.department, cl.clubAff
+        ORDER BY sg.groupID DESC`
         db.query(postQuery, [req.params.userID], (err, data) => {
             if (err) return res.status(500).json(err)
             return res.json(data)

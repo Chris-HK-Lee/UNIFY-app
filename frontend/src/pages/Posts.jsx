@@ -21,6 +21,9 @@ const Posts = () => {
 
     return (
         <>
+        <div className="main-content">
+            <h2>Explore Posts</h2>
+        </div>
         <div className="card-list">
         {posts.map(post => (
             <div className="card" key={post.postID}>

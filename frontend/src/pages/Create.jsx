@@ -94,12 +94,6 @@ const Create = () => {
               <option value="private">Private (Friends-Only)</option>
             </select>
           </div>
-          <div className="field">
-            <label>Upload to a board? (optional)</label>
-            <select name="boardID">
-              <option value="">— None —</option>
-            </select>
-          </div>
           <div className="form-actions">
             <button type="button" onClick={() => setActive(null)}>Cancel</button>
             <button type="submit">Post</button>
@@ -207,8 +201,8 @@ const Create = () => {
           )}
           {groupType === 'club' && (
             <div className="field">
-              <label>Club Rep User ID</label>
-              <input name="clubRepID" type="number" placeholder="Enter club rep user ID (if same as group creator, retype)!" required />
+              <label>Club Affiliation</label>
+              <input name="clubAff" type="text" placeholder="Enter the club's school affiliation!" required />
             </div>
           )}
           <div className="form-actions">
