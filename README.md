@@ -33,7 +33,8 @@ Log in:
 admin login:
     - for security reasons admin cannot register on the login screen
     - We did not implement how we are going to handle new admin creation (other than inserting directly into database)
-    - We created a admin account 
+    - We created a admin account for the TA to use
+    - Select admin button on login screen and enter the credentials below
         - Admin account:
             - email: admin@admin.com
             - password: admin
