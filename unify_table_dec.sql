@@ -190,13 +190,13 @@ INSERT INTO COMPANY_REP (userID, businessEmail) VALUES
 
 -- University pages (pending approval)
 INSERT INTO UNIPAGE (userID, UniName, UniDesc, approved) VALUES
-(4, 'State University', 'A leading research university with programs in engineering, arts, and sciences.', 0),
-(5, 'City College', 'Community-focused college offering undergraduate and graduate programs.', 0);
+(4, 'State University', 'A leading research university with programs in engineering, arts, and sciences.', 1),
+(5, 'City College', 'Community-focused college offering undergraduate and graduate programs.', 1);
 
 -- Company pages (pending approval)
 INSERT INTO COMPPAGE (userID, CompName, CompDesc, approved) VALUES
-(6, 'TechCorp', 'Software solutions company specialising in cloud infrastructure and AI tools.', 0),
-(7, 'Nexus Labs', 'Biotech startup developing next-generation diagnostic equipment.', 0);
+(6, 'TechCorp', 'Software solutions company specialising in cloud infrastructure and AI tools.', 1),
+(7, 'Nexus Labs', 'Biotech startup developing next-generation diagnostic equipment.', 1);
 
 -- Posts
 INSERT INTO POSTS (postID, userID, postContent, privStatus) VALUES

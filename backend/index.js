@@ -767,7 +767,7 @@ app.listen(8800, () => {
         })
     })
 
-    // Admin: get all pages pending approval
+    // Admin: get all pages
     app.get("/admin/pages", (req, res) => {
         const uniQ = `SELECT p.userID, p.UniName, p.UniDesc, p.approved, u.fname, u.lname
                       FROM UNIPAGE p JOIN USERS u ON p.userID = u.userID`
@@ -849,9 +849,13 @@ app.listen(8800, () => {
             "DELETE FROM QUESTIONBOARD WHERE userID = ?",
             "DELETE FROM JOBBOARD WHERE userID = ?",
             "DELETE FROM BOARDS WHERE userID = ?",
-            "DELETE FROM COURSE WHERE userID = ?",
-            "DELETE FROM MAJOR WHERE userID = ?",
-            "DELETE FROM CLUB WHERE userID = ?",
+            // remove user from any groups they are a member of
+            "DELETE FROM GROUP_MEMBERS WHERE userID = ?",
+            // delete all members of groups this user owns, then subtype rows and groups
+            "DELETE gm FROM GROUP_MEMBERS gm JOIN SOCIAL_GROUP sg ON gm.groupID = sg.groupID WHERE sg.userID = ?",
+            "DELETE c FROM COURSE c JOIN SOCIAL_GROUP sg ON c.groupID = sg.groupID WHERE sg.userID = ?",
+            "DELETE m FROM MAJOR m JOIN SOCIAL_GROUP sg ON m.groupID = sg.groupID WHERE sg.userID = ?",
+            "DELETE cl FROM CLUB cl JOIN SOCIAL_GROUP sg ON cl.groupID = sg.groupID WHERE sg.userID = ?",
             "DELETE FROM SOCIAL_GROUP WHERE userID = ?",
             "DELETE FROM FRIEND WHERE friendID = ? OR friendeeID = ?",
             "DELETE FROM ADMINS WHERE userID = ?",
@@ -864,7 +868,8 @@ app.listen(8800, () => {
         const runNext = () => {
             if (i >= deletes.length) return res.json("User removed")
             const q = deletes[i++]
-            const params = q.includes("friendID") ? [userID, userID] : [userID]
+            const count = (q.match(/\?/g) || []).length
+            const params = Array(count).fill(userID)
             db.query(q, params, (err) => {
                 if (err) { console.error("delete user err:", err); return res.status(500).json(err.sqlMessage || err) }
                 runNext()
