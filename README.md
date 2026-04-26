@@ -28,7 +28,16 @@ path/to/UNIFY-app/
 
 ### 2. Backend Configuration
 
->  **Important:** Open `path/to/UNIFY-app/backend/index.js` and update the password field to your own MySQL password before running.
+>  **Important:** Open `path/to/UNIFY-app/backend/index.js` and update the password field to your own MySQL password before running. The following code block is lines 11-17.
+```
+    // change to your password and db name
+    const db = mysql.createConnection({
+        host: "localhost",
+        user: "root",
+        password: "",
+        database: "unify"
+    })
+```
 
 ### 3. Running the Backend
 
