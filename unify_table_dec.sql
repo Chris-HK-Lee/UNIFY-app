@@ -224,5 +224,4 @@ INSERT INTO SOCIAL_GROUP (groupID, groupName, groupDesc, userID) VALUES
 
 INSERT INTO COURSE (groupID, courseCode, userID) VALUES (1, 'CS101', 1);
 INSERT INTO MAJOR  (groupID, department, userID)  VALUES (2, 'Biology', 3);
-INSERT INTO CLUB   (groupID, clubRepID, userID)   VALUES (3, 2, 2);
-
+INSERT INTO CLUB   (groupID, userID, clubAff)   VALUES (3, 2, "cheese club");
