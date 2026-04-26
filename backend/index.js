@@ -12,7 +12,7 @@ app.listen(8800, () => {
     const db = mysql.createConnection({
         host: "localhost",
         user: "root",
-        password: "",
+        password: "Asiancanadian1!",
         database: "unify"
     })
 
@@ -284,6 +284,16 @@ app.listen(8800, () => {
         })
     })
 
+    // editing a user's own post
+    app.put("/posts/:postID", (req, res) => {
+        const { postContent, privStatus } = req.body
+        db.query("UPDATE POSTS SET postContent = ?, privStatus = ? WHERE postID = ?",
+            [postContent, privStatus, req.params.postID], (err) => {
+            if (err) return res.status(500).json(err.sqlMessage || err)
+            return res.json("Post updated successfully")
+        })
+    })
+
     //deleting a user's own post
     app.delete("/posts/:postID", (req, res) => {
         const { postID } = req.params
@@ -340,6 +350,16 @@ app.listen(8800, () => {
         })
     })
 
+    // editing a user's own board (description and privacy only — type-specific fields are fixed)
+    app.put("/boards/:boardID", (req, res) => {
+        const { boardDesc, privStatus } = req.body
+        db.query("UPDATE BOARDS SET boardDesc = ?, privStatus = ? WHERE boardID = ?",
+            [boardDesc, privStatus, req.params.boardID], (err) => {
+            if (err) return res.status(500).json(err.sqlMessage || err)
+            return res.json("Board updated successfully")
+        })
+    })
+
     //deleting a user's own board
     app.delete("/boards/:boardID", (req, res) => {
         const { boardID } = req.params
@@ -354,6 +374,16 @@ app.listen(8800, () => {
             if (err) return res.status(500).json(err)
             return res.json("Board deleted successfully")
         })})})})})
+    })
+
+    // editing a user's own group (name and description only)
+    app.put("/groups/:groupID", (req, res) => {
+        const { groupName, groupDesc } = req.body
+        db.query("UPDATE SOCIAL_GROUP SET groupName = ?, groupDesc = ? WHERE groupID = ?",
+            [groupName, groupDesc, req.params.groupID], (err) => {
+            if (err) return res.status(500).json(err.sqlMessage || err)
+            return res.json("Group updated successfully")
+        })
     })
 
     // leaving a group that a user is in

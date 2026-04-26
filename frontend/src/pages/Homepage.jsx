@@ -10,6 +10,7 @@ import Cpage from './Cpage'
 import Upage from './Upage'
 import AdminPages from './AdminPages'
 import AdminUsers from './AdminUsers'
+import EditPopup from './EditPopup'
 
 
 const Homepage = () => {
@@ -22,6 +23,7 @@ const Homepage = () => {
 
     const UserPosts = ({ userID }) => {
         const [posts, setPosts] = useState([])
+        const editPopupRef = useRef()
 
         useEffect(() => {
             fetch(`http://localhost:8800/posts/user/${userID}`)
@@ -32,21 +34,31 @@ const Homepage = () => {
 
         if (posts.length === 0) return <p>No posts yet.</p>
 
-        const delPost = async (postID) => {
-            try {
-            const res = await fetch(`http://localhost:8800/posts/${postID}`, {
-                method: 'DELETE'
+        const openEdit = (post) => {
+            editPopupRef.current.open({
+                title: 'Edit Post',
+                fields: [
+                    { key: 'postContent', label: 'Content', type: 'textarea', initial: post.postContent },
+                    { key: 'privStatus', label: 'Visibility', type: 'select', initial: post.privStatus, options: ['public', 'private'] },
+                ],
+                onSave: async (values) => {
+                    await fetch(`http://localhost:8800/posts/${post.postID}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(values)
+                    })
+                    setPosts(prev => prev.map(p => p.postID === post.postID ? { ...p, ...values } : p))
+                }
             })
-            const raw = await res.text()
-            console.log(raw)
-            // remove from UI without refetching
+        }
+
+        const delPost = async (postID) => {
+            await fetch(`http://localhost:8800/posts/${postID}`, { method: 'DELETE' })
             setPosts(prev => prev.filter(p => p.postID !== postID))
-            } catch (err) {
-            console.error("Delete failed:", err)
-            }
         }
 
         return (
+            <>
             <div className="card-list">
             {posts.map(post => (
                 <div className="card" key={post.postID}>
@@ -54,7 +66,7 @@ const Homepage = () => {
                     <span className="card-sub">@{user.username}</span>
                     <span className="card-content">{post.postContent}</span>
                     <div className="card-actions">
-                        <button>Edit</button>
+                        <button onClick={() => openEdit(post)}>Edit</button>
                         <button onClick={() => delPost(post.postID)}>Delete</button>
                     </div>
                 </div>
@@ -62,11 +74,14 @@ const Homepage = () => {
                 </div>
             ))}
             </div>
+            <EditPopup ref={editPopupRef} />
+            </>
         )
     }
 
     const UserBoards = ({ userID }) => {
         const [boards, setBoards] = useState([])
+        const editPopupRef = useRef()
 
         useEffect(() => {
             fetch(`http://localhost:8800/boards/user/${userID}`)
@@ -76,7 +91,7 @@ const Homepage = () => {
         }, [userID])
 
         if (boards.length === 0) return <p className="empty">No boards yet.</p>
-        
+
         const getDetail = (board) => {
             if (board.boardType === 'Question') return `Category: ${board.category}`
             if (board.boardType === 'Event')  return `Time: ${board.eventTime} | Location: ${board.eventLoc}`
@@ -84,30 +99,39 @@ const Homepage = () => {
             return 'General Board'
         }
 
-        const delBoard = async (boardID) => {
-            try {
-            const res = await fetch(`http://localhost:8800/boards/${boardID}`, {
-                method: 'DELETE'
+        const openEdit = (board) => {
+            editPopupRef.current.open({
+                title: 'Edit Board',
+                fields: [
+                    { key: 'boardDesc', label: 'Description', type: 'textarea', initial: board.boardDesc },
+                    { key: 'privStatus', label: 'Visibility', type: 'select', initial: board.privStatus, options: ['public', 'private'] },
+                ],
+                onSave: async (values) => {
+                    await fetch(`http://localhost:8800/boards/${board.boardID}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(values)
+                    })
+                    setBoards(prev => prev.map(b => b.boardID === board.boardID ? { ...b, ...values } : b))
+                }
             })
-            const raw = await res.text()
-            console.log(raw)
-            // remove from UI without refetching
+        }
+
+        const delBoard = async (boardID) => {
+            await fetch(`http://localhost:8800/boards/${boardID}`, { method: 'DELETE' })
             setBoards(prev => prev.filter(b => b.boardID !== boardID))
-            } catch (err) {
-            console.error("Delete failed:", err)
-            }
         }
 
         return (
+            <>
             <div className="card-list">
             {boards.map(board => (
-                <div className="card" key={board.groupID}>
+                <div className="card" key={board.boardID}>
                 <div className="card-left">
                     <span className="card-sub">{getDetail(board)}</span>
                     <span className="card-content">{board.boardDesc}</span>
                     <div className="card-actions">
-                        <button>Edit</button>
-                        <button>Reply</button>
+                        <button onClick={() => openEdit(board)}>Edit</button>
                         <button onClick={() => delBoard(board.boardID)}>Delete</button>
                     </div>
                 </div>
@@ -117,12 +141,15 @@ const Homepage = () => {
                 </div>
             ))}
             </div>
+            <EditPopup ref={editPopupRef} />
+            </>
         )
     }
 
     const UserGroups = ({ userID }) => {
         const [groups, setGroups] = useState([])
         const viewPopupRef = useRef()
+        const editPopupRef = useRef()
 
         useEffect(() => {
             fetch(`http://localhost:8800/groups/user/${userID}`)
@@ -130,7 +157,6 @@ const Homepage = () => {
             .then(data => setGroups(data))
             .catch(err => console.error(err))
         }, [userID])
-
 
         if (groups.length === 0) return <p className="empty">No groups yet.</p>
 
@@ -141,19 +167,31 @@ const Homepage = () => {
             return 'General Group'
         }
 
+        const openEdit = (group) => {
+            editPopupRef.current.open({
+                title: 'Edit Group',
+                fields: [
+                    { key: 'groupName', label: 'Group Name', type: 'text', initial: group.groupName },
+                    { key: 'groupDesc', label: 'Description', type: 'textarea', initial: group.groupDesc },
+                ],
+                onSave: async (values) => {
+                    await fetch(`http://localhost:8800/groups/${group.groupID}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(values)
+                    })
+                    setGroups(prev => prev.map(g => g.groupID === group.groupID ? { ...g, ...values } : g))
+                }
+            })
+        }
+
         const leaveGroup = async (userID, groupID) => {
-            try {
-                const res = await fetch(`http://localhost:8800/groups/leave`, {
+            await fetch(`http://localhost:8800/groups/leave`, {
                 method: 'DELETE',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ userID, groupID })
-                })
-                const raw = await res.text()
-                console.log(raw)
-                setGroups(prev => prev.filter(g => g.groupID !== groupID))
-            } catch (err) {
-                console.error("Leave failed:", err)
-            }
+            })
+            setGroups(prev => prev.filter(g => g.groupID !== groupID))
         }
 
         return(
@@ -165,19 +203,19 @@ const Homepage = () => {
                     <span className="card-sub">{getDetail(group)}</span>
                     <span className="card-content">{group.groupDesc}</span>
                     <div className="card-actions">
+                        <button onClick={() => openEdit(group)}>Edit</button>
                         <button onClick={() => leaveGroup(user.userID, group.groupID)}>Leave</button>
                     </div>
-                    
                 </div>
                 <div className="card-right">
-                    <span className="card-detail" >{group.groupName}</span>
+                    <span className="card-detail">{group.groupName}</span>
                     <button className="card-button" onClick={() => viewPopupRef.current.viewMembers(group)}>View {group.numMembers} members</button>
                 </div>
                 </div>
             ))}
             </div>
-
-            <ViewPopup ref={viewPopupRef} /> 
+            <ViewPopup ref={viewPopupRef} />
+            <EditPopup ref={editPopupRef} />
             </>
         )
     }
