@@ -12,7 +12,7 @@ app.listen(8800, () => {
     const db = mysql.createConnection({
         host: "localhost",
         user: "root",
-        password: "Asiancanadian1!",
+        password: "",
         database: "unify"
     })
 
