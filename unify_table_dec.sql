@@ -70,8 +70,8 @@ CREATE TABLE MAJOR (
 
 CREATE TABLE CLUB (
     groupID   INT NOT NULL,
-    clubRepID INT,
     userID    INT NOT NULL,
+    clubAff   VARCHAR(255),
     CONSTRAINT fk_club_groupID FOREIGN KEY (groupID) REFERENCES SOCIAL_GROUP(groupID),
     CONSTRAINT fk_club_userID  FOREIGN KEY (userID)  REFERENCES USERS(userID)
 );

@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef }from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import './Homepage.css'
 import ViewPopup from './viewPopup'
+import ReplyPopup from './replyPopup'
+import UserPopup from './userPopup'
 import Create from './Create'
 import Posts from './Posts'
 import Boards from './Boards'
@@ -20,6 +22,7 @@ const Homepage = () => {
     const nav = useNavigate()
     const [activePage, setActivePage] = useState('home')
     const [profileTab, setProfileTab] = useState('posts')
+    const [friendTab, setFriendTab] = useState('fPosts')
 
     const UserPosts = ({ userID }) => {
         const [posts, setPosts] = useState([])
@@ -31,6 +34,7 @@ const Homepage = () => {
             .then(data => setPosts(data))
             .catch(err => console.error(err))
         }, [userID])
+
 
         if (posts.length === 0) return <p>No posts yet.</p>
 
@@ -81,12 +85,30 @@ const Homepage = () => {
 
     const UserBoards = ({ userID }) => {
         const [boards, setBoards] = useState([])
+        const [replies, setReplies] = useState([])
         const editPopupRef = useRef()
+        const replyPopupRef = useRef()
 
         useEffect(() => {
             fetch(`http://localhost:8800/boards/user/${userID}`)
             .then(res => res.json())
-            .then(data => setBoards(data))
+            .then(data => {
+                if (!Array.isArray(data)) return
+                setBoards(data)
+
+                // fetch posts for every board at once
+                data.forEach(board => {
+                fetch(`http://localhost:8800/boards/${board.boardID}/posts`)
+                    .then(res => res.json())
+                    .then(posts => {
+                    setReplies(prev => ({
+                        ...prev,
+                        [board.boardID]: Array.isArray(posts) ? posts : []
+                    }))
+                    })
+                    .catch(err => console.error(err))
+                })
+            })
             .catch(err => console.error(err))
         }, [userID])
 
@@ -122,16 +144,25 @@ const Homepage = () => {
             setBoards(prev => prev.filter(b => b.boardID !== boardID))
         }
 
+        const handlePostCreated = (boardID, newPost) => {
+            setReplies(prev => ({
+            ...prev,
+            [boardID]: [...(prev[boardID] || []), newPost]
+            }))
+        }
+
         return (
             <>
             <div className="card-list">
             {boards.map(board => (
-                <div className="card" key={board.boardID}>
+                <div className="card-group" key={board.boardID}>
+                    <div className="card">
                 <div className="card-left">
                     <span className="card-sub">{getDetail(board)}</span>
                     <span className="card-content">{board.boardDesc}</span>
                     <div className="card-actions">
                         <button onClick={() => openEdit(board)}>Edit</button>
+                        <button onClick={() => replyPopupRef.current.openReply(board)}>Reply</button>
                         <button onClick={() => delBoard(board.boardID)}>Delete</button>
                     </div>
                 </div>
@@ -139,9 +170,26 @@ const Homepage = () => {
                     <span className="card-status">{board.privStatus}</span>
                 </div>
                 </div>
+                {replies[board.boardID]?.length > 0 && (
+                <div className="board-replies">
+                    {replies[board.boardID].map(post => (
+                    <div className="reply-card" key={post.postID}>
+                        <div className="card-left">
+                        <span className="card-sub">@{post.username}</span>
+                        <span className="card-content">{post.postContent}</span>
+                        </div>
+                        <div className="card-right">
+                        <span className="card-status">{post.privStatus}</span>
+                        </div>
+                    </div>
+                    ))}
+                </div>
+                )}
+                </div>
             ))}
             </div>
             <EditPopup ref={editPopupRef} />
+            <ReplyPopup ref={replyPopupRef} onPostCreated={handlePostCreated} />
             </>
         )
     }
@@ -163,7 +211,7 @@ const Homepage = () => {
         const getDetail = (group) => {
             if (group.groupType === 'Course') return `Course: ${group.courseCode}`
             if (group.groupType === 'Major')  return `Department: ${group.department}`
-            if (group.groupType === 'Club')   return `Club Rep Name: ${group.repFname} ${group.repLname}`
+            if (group.groupType === 'Club')   return `Affiliation: ${group.clubAff}`
             return 'General Group'
         }
 
@@ -265,9 +313,193 @@ const Homepage = () => {
                 </div>
             ))}
             </div>
-        )
+        ) 
+    }
 
+    const FriendPosts = ({ userID }) => {
+        const [posts, setPosts] = useState([])
+        const userPopupRef = useRef()
+
+        useEffect(() => {
+            fetch(`http://localhost:8800/fPosts/user/${userID}`)
+            .then(res => res.json())
+            .then(data => setPosts(data))
+            .catch(err => console.error(err))
+        }, [userID])
+
+        if (posts.length === 0) return <p>No posts from friends yet.</p>
+
+        return (
+            <>
+            <div className="card-list">
+            {posts.map(post => (
+                <div className="card" key={post.postID}>
+                <div className="card-left">
+                    <span className="card-sub">@{post.username}</span>
+                    <span className="card-content">{post.postContent}</span>
+                    <div className="card-actions">
+                        <button onClick={() => userPopupRef.current.viewUser(post.userID)}>View User Profile</button>
+                    </div>
+                </div>
+                <span className="card-status">{post.privStatus}</span>
+                </div>
+            ))}
+            </div>
+            <UserPopup ref={userPopupRef} />
+            </>
+        )
+    }
+
+    const FriendBoards = ({ userID }) => {
+        const [boards, setBoards] = useState([])
+        const [replies, setReplies] = useState([])
+        const userPopupRef = useRef()
+        const replyPopupRef = useRef()
+
+        useEffect(() => {
+            fetch(`http://localhost:8800/fBoards/user/${userID}`)
+            .then(res => res.json())
+            .then(data => {
+                if (!Array.isArray(data)) return
+                setBoards(data)
+
+                // fetch posts for every board at once
+                data.forEach(board => {
+                fetch(`http://localhost:8800/boards/${board.boardID}/posts`)
+                    .then(res => res.json())
+                    .then(posts => {
+                    setReplies(prev => ({
+                        ...prev,
+                        [board.boardID]: Array.isArray(posts) ? posts : []
+                    }))
+                    })
+                    .catch(err => console.error(err))
+                })
+            })
+            .catch(err => console.error(err))
+        }, [userID])
+
+        if (boards.length === 0) return <p className="empty">No boards from friends yet.</p>
         
+        const getDetail = (board) => {
+            if (board.boardType === 'Question') return `Category: ${board.category}`
+            if (board.boardType === 'Event')  return `Time: ${board.eventTime} | Location: ${board.eventLoc}`
+            if (board.boardType === 'Job')  return `Field: ${board.jobfield} | Employer: ${board.employerName} | Deadline: ${board.appDeadline}`
+            return 'General Board'
+        }
+
+        const handlePostCreated = (boardID, newPost) => {
+            setReplies(prev => ({
+            ...prev,
+            [boardID]: [...(prev[boardID] || []), newPost]
+            }))
+        }
+
+        return (
+            <>
+            <div className="card-list">
+                {boards.map(board => (
+                <div className="card-group" key={board.boardID}>
+                    <div className="card">
+                        <div className="card-left">
+                            <span className="card-sub">@{board.username}</span>
+                            <span className="card-sub">{getDetail(board)}</span>
+                            <span className="card-content">{board.boardDesc}</span>
+                            <div className="card-actions">
+                                <button onClick={() => userPopupRef.current.viewUser(board.userID)}>View User Profile</button>
+                                <button onClick={() => replyPopupRef.current.openReply(board)}>Reply to @{board.username}</button>
+                            </div>
+                        </div>
+                    <div className="card-right">
+                        <span className="card-status">{board.privStatus}</span>
+                </div>
+                </div>
+                {replies[board.boardID]?.length > 0 && (
+                    <div className="board-replies">
+                        {replies[board.boardID].map(post => (
+                        <div className="reply-card" key={post.postID}>
+                            <div className="card-left">
+                            <span className="card-sub">@{post.username}</span>
+                            <span className="card-content">{post.postContent}</span>
+                            </div>
+                            <div className="card-right">
+                            <span className="card-status">{post.privStatus}</span>
+                            </div>
+                        </div>
+                        ))}
+                    </div>
+                    )}
+                </div>
+            ))}
+            </div>
+
+            <UserPopup ref={userPopupRef} />
+            <ReplyPopup ref={replyPopupRef} />
+            <ReplyPopup ref={replyPopupRef} onPostCreated={handlePostCreated} />
+            </>
+        )
+    }
+
+    const FriendGroups = ({ userID }) => {
+        const [groups, setGroups] = useState([])
+        const viewPopupRef = useRef()
+
+        useEffect(() => {
+            fetch(`http://localhost:8800/fGroups/user/${userID}`)
+            .then(res => res.json())
+            .then(data => setGroups(data))
+            .catch(err => console.error(err))
+        }, [userID])
+
+
+        if (groups.length === 0) return <p className="empty">No friends in groups yet.</p>
+
+        const getDetail = (group) => {
+            if (group.groupType === 'Course') return `Course: ${group.courseCode}`
+            if (group.groupType === 'Major')  return `Department: ${group.department}`
+            if (group.groupType === 'Club')   return `Affiliation: ${group.clubAff}`
+            return 'General Group'
+        }
+
+        const joinGroup = async (userID, groupID) => {
+            try {
+                const res = await fetch(`http://localhost:8800/groups/join`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userID, groupID })
+                })
+                const raw = await res.text()
+                console.log(raw)
+                setGroups(prev => prev.filter(g => g.groupID !== groupID))
+            } catch (err) {
+                console.error("Join failed:", err)
+            }
+        }
+
+        return(
+            <>
+            <div className="card-list">
+            {groups.map(group => (
+                <div className="card" key={group.groupID}>
+                <div className="card-left">
+                    <span className="card-sub">{getDetail(group)}</span>
+                    <span className="card-content">{group.groupDesc}</span>
+                    <div className="card-actions">
+                        <button onClick={() => joinGroup(userID, group.groupID)}>Join</button>
+                    </div>
+                    
+                </div>
+                <div className="card-right">
+                    <span className="card-detail" >{group.groupName}</span>
+                    <button className="card-button" onClick={() => viewPopupRef.current.viewMembers(group)}>View {group.numMembers} members</button>
+                </div>
+                </div>
+            ))}
+            </div>
+
+            <ViewPopup ref={viewPopupRef} /> 
+            </>
+        )
     }
 
     const renderPage = () => {
@@ -291,6 +523,22 @@ const Homepage = () => {
             </div>
         </div>
     if (activePage === 'create') return <Create />
+    if (activePage === 'friend')  
+        return <div className="main-content">
+                <h2>Friend Activity</h2>
+            <div className="profile-tabs">
+                <button className={friendTab === 'fPosts'  ? 'active' : ''} onClick={() => setFriendTab('fPosts')}>Their Posts</button>
+                <button className={friendTab === 'fBoards' ? 'active' : ''} onClick={() => setFriendTab('fBoards')}>Their Boards</button>
+                <button className={friendTab === 'fGroups' ? 'active' : ''} onClick={() => setFriendTab('fGroups')}>Their Groups</button>
+
+            </div>
+
+            <div className="profile-tab-content">
+                {friendTab === 'fPosts' && <FriendPosts userID={userID} />}
+                {friendTab === 'fBoards' && <FriendBoards userID={userID} />}
+                {friendTab === 'fGroups' && <FriendGroups userID={userID} />}
+            </div>
+        </div>
     if (activePage === 'posts') return <Posts />
     if (activePage === 'boards') return <Boards />
     if (activePage === 'groups') return <Groups />
@@ -316,6 +564,7 @@ const Homepage = () => {
         <nav className="sidebar-nav">
           <button className={activePage === 'home'   ? 'active' : ''} onClick={() => setActivePage('home')}>Home</button>
           <button className={activePage === 'create' ? 'active' : ''} onClick={() => setActivePage('create')}>Create</button>
+          <button className={activePage === 'friend' ? 'active' : ''} onClick={() => setActivePage('friend')}>Friend Activity</button>
           <button className={activePage === 'posts'  ? 'active' : ''} onClick={() => setActivePage('posts')}>Posts</button>
           <button className={activePage === 'boards' ? 'active' : ''} onClick={() => setActivePage('boards')}>Boards</button>
           <button className={activePage === 'groups' ? 'active' : ''} onClick={() => setActivePage('groups')}>Groups</button>

@@ -44,6 +44,9 @@ const Groups = () => {
 
     return (
         <>
+        <div className="main-content">
+            <h2>Explore Groups</h2>
+        </div>
         <div className="card-list">
         {groups.map(group => (
             <div className="card" key={group.groupID}>

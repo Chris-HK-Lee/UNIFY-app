@@ -249,3 +249,28 @@
   color: #888;
   font-size: 15px;
 }
+
+.card-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 10px;
+}
+
+.board-replies {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-left: 18px;
+  border-left: 2px solid #63b1ff;
+}
+
+.reply-card {
+  background: #f8faff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 12px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
